@@ -1,0 +1,20 @@
+# Virtual Environment
+venv/
+.venv/
+env/
+
+# CS2 Demo Files (GitHub rejects files > 100MB)
+*.dem
+*.bz2
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Generated Reports
+*_report.html
+
+# OS specific
+.DS_Store
+Thumbs.db

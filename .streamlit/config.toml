@@ -1,0 +1,12 @@
+[server]
+maxUploadSize = 500
+
+[theme]
+base = "dark"
+primaryColor = "#B7F34A"
+backgroundColor = "#0B1018"
+secondaryBackgroundColor = "#151F2B"
+textColor = "#EEF3F8"
+font = "sans serif"
+baseRadius = "large"
+showWidgetBorder = true
