@@ -200,7 +200,7 @@ function selectHitWeapon(weapon) {{
   const impactImages = points.map(hit => ({{
     source: bulletHoleTexture,
     xref: "x", yref: "y", x: hit.x, y: hit.y,
-    sizex: 70.4, sizey: 70.4, xanchor: "center", yanchor: "middle",
+    sizex: 40.4, sizey: 40.4, xanchor: "center", yanchor: "middle",
     sizing: "stretch", opacity: 1, layer: "above", captureevents: false
   }}));
   const layoutForWeapon = {{...bulletPlotLayout, images: [bulletPlotLayout.images[0], ...impactImages]}};
