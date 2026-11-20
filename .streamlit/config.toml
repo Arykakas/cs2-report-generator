@@ -3,10 +3,17 @@ maxUploadSize = 500
 
 [theme]
 base = "dark"
-primaryColor = "#B7F34A"
-backgroundColor = "#0B1018"
-secondaryBackgroundColor = "#151F2B"
-textColor = "#EEF3F8"
-font = "sans serif"
+primaryColor = "#F43F5E"
+backgroundColor = "#0F0F23"
+secondaryBackgroundColor = "#171A2B"
+textColor = "#E2E8F0"
+font = "Fira Sans:https://fonts.googleapis.com/css2?family=Fira+Sans:wght@400;500;600;700&display=swap"
+headingFont = "Fira Sans:https://fonts.googleapis.com/css2?family=Fira+Sans:wght@400;500;600;700&display=swap"
+codeFont = "Fira Code:https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&display=swap"
+borderColor = "#30384D"
+codeBackgroundColor = "#111626"
+codeTextColor = "#C4B5FD"
 baseRadius = "large"
 showWidgetBorder = true
+paddingTop = "2rem"
+paddingBottom = "2rem"

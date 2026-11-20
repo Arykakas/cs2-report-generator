@@ -1,6 +1,8 @@
 from pathlib import Path
 import argparse
 from html import escape
+import os
+import sys
 
 import polars as pl
 
@@ -26,15 +28,25 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
+def _emit_progress(fraction: float, message: str) -> None:
+    """Send machine-readable progress only to the GUI wrapper."""
+    if os.environ.get("CS2_REPORT_PROGRESS") == "1":
+        print(f"CS2_PROGRESS|{fraction:.2f}|{message}", file=sys.stderr, flush=True)
+
+
 def main() -> None:
     args = parse_args()
     demo_path = args.demo.expanduser().resolve()
     player_input = args.player.strip()
+    _emit_progress(0.08, "Opening demo and reading match tables")
     demo = load_demo(demo_path)
+    _emit_progress(0.25, "Scanning the player and round data")
     player_steamid, target_player, target_shots = resolve_player(demo, player_input)
 
+    _emit_progress(0.38, "Mapping weapon hits to the player model")
     hit_model_html = analyze_hits(demo, player_steamid)["hit_model_html"]
 
+    _emit_progress(0.48, "Measuring movement and crosshair motion")
     movement = analyze_weapon_movement(demo, target_shots, player_steamid)
     angular_velocity_by_tick = movement["angular_velocity_by_tick"]
     angular_deviation_by_tick = movement["angular_deviation_by_tick"]
@@ -66,6 +78,7 @@ def main() -> None:
     utility_deaths = utility_result["utility_deaths"]
     utility_death_ticks = utility_result["utility_death_ticks"]
 
+    _emit_progress(0.68, "Calculating aim deviation on kills")
     aim = analyze_aim(demo, target_shots, player_steamid, angular_velocity_by_tick,
                       angular_deviation_by_tick, shots_with_velocity)
     kill_deviations = aim["kill_deviations"]
@@ -80,6 +93,7 @@ def main() -> None:
     high_deviation_kills = aim["high_deviation_kills"]
     shots_before_crosshair_settles = aim["shots_before_crosshair_settles"]
 
+    _emit_progress(0.79, "Summarizing flash and utility events")
     flash_analysis = analyze_flashes(demo, player_steamid)
     flash_count = flash_analysis["flash_count"]
     enemy_blinds = flash_analysis["enemy_blinds"]
@@ -90,6 +104,7 @@ def main() -> None:
     flash_teammate_or_self_count = flash_analysis["flash_teammate_or_self_count"]
     flash_details = flash_analysis["flash_details"]
 
+    _emit_progress(0.88, "Building your match report")
     player_stats_frame = demo.stats.filter(pl.col("name") == target_player)
     if player_stats_frame.is_empty():
         raise ValueError(f"No basic stats found for player name: {target_player}")
@@ -342,6 +357,7 @@ def main() -> None:
     report_text = "\n".join(report_lines)
     report_path.write_text(report_text + "\n", encoding="utf-8")
     html_report_path.write_text(html_report, encoding="utf-8")
+    _emit_progress(1.0, "Analysis complete")
     print(report_text)
     print(f"\nReport saved to: {report_path}")
     print(f"HTML report saved to: {html_report_path}")

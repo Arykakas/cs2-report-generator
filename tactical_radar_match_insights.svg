@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="420" height="850" viewBox="0 0 420 850" fill="none">
+  <defs>
+    <linearGradient id="purple" x1="50" y1="80" x2="360" y2="760" gradientUnits="userSpaceOnUse"><stop stop-color="#B99AFF"/><stop offset="1" stop-color="#7C3AED"/></linearGradient>
+    <linearGradient id="bar" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#A78BFA"/><stop offset="1" stop-color="#8B5CF6"/></linearGradient>
+    <radialGradient id="radarGlow"><stop stop-color="#8B5CF6" stop-opacity=".18"/><stop offset="1" stop-color="#8B5CF6" stop-opacity="0"/></radialGradient>
+    <filter id="glow" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <filter id="softGlow" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="2.2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <!-- Outer technical frame -->
+  <path d="M55 20H28L12 38V780L34 802H55M365 20H392L408 38V780L386 802H365" stroke="#8B5CF6" stroke-opacity=".62" stroke-width="1.2"/>
+  <path d="M12 64H27M12 64V79M408 64H393M408 64V79M12 755H27M12 755V740M408 755H393M408 755V740" stroke="#A78BFA" stroke-opacity=".65" stroke-width="1.5"/>
+  <!-- Radar area -->
+  <circle cx="210" cy="216" r="186" fill="url(#radarGlow)"/>
+  <g stroke="url(#purple)" stroke-opacity=".72">
+    <circle cx="210" cy="216" r="151" stroke-width="1.6"/>
+    <circle cx="210" cy="216" r="126" stroke-opacity=".3" stroke-dasharray="2 7"/>
+    <circle cx="210" cy="216" r="91" stroke-opacity=".26"/>
+    <path d="M210 40V392M34 216H386" stroke-opacity=".42" stroke-dasharray="3 7"/>
+    <path d="M85 91L335 341M335 91L85 341" stroke-opacity=".18" stroke-dasharray="3 8"/>
+  </g>
+  <!-- segmented radar ring -->
+  <circle cx="210" cy="216" r="169" stroke="#8B5CF6" stroke-opacity=".16" stroke-width="1"/>
+  <circle cx="210" cy="216" r="169" stroke="url(#purple)" stroke-width="3" stroke-dasharray="58 14 34 18 74 16 42 20" stroke-linecap="square" filter="url(#softGlow)"/>
+  <g stroke="#B99AFF" stroke-width="2" stroke-linecap="round" filter="url(#softGlow)">
+    <path d="M210 28V55M210 377V404M22 216H49M371 216H398"/>
+  </g>
+  <!-- sweep sector -->
+  <path d="M210 216L210 47A169 169 0 0 1 369 187Z" fill="#8B5CF6" fill-opacity=".055"/>
+  <path d="M210 216L352 125" stroke="#A78BFA" stroke-opacity=".35" stroke-width="1.2"/>
+  <circle cx="210" cy="216" r="4" fill="#C4B5FD" filter="url(#glow)"/>
+  <!-- simplified full-body target silhouette -->
+  <g stroke="#B99AFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" stroke-opacity=".92" filter="url(#softGlow)">
+    <path d="M196 105C196 93 202 86 210 86C218 86 224 93 224 105L222 119C221 127 216 132 210 132C204 132 199 127 198 119Z"/>
+    <path d="M198 133L190 143L183 166L174 196L166 224L171 231L179 225L190 194L197 175L198 215L194 252L188 291L185 337L192 343L199 339L205 293L210 260L215 293L221 339L228 343L235 337L232 291L226 252L222 215L223 175L230 194L241 225L249 231L254 224L246 196L237 166L230 143L222 133Z"/>
+    <path d="M198 134Q210 141 222 134M198 174Q210 181 223 174M198 215Q210 221 222 215" stroke-opacity=".45"/>
+  </g>
+  <!-- target-zone pips and callouts -->
+  <g fill="#C4B5FD" stroke="#8B5CF6" stroke-width="1" filter="url(#softGlow)"><circle cx="210" cy="105" r="4"/><circle cx="210" cy="171" r="4"/><circle cx="210" cy="285" r="4"/></g>
+  <g stroke="#A78BFA" stroke-width="1.2" stroke-opacity=".85">
+    <path d="M214 105H276L288 94H322M214 171H278L290 181H326M214 285H272L285 296H322"/>
+  </g>
+  <g fill="#C4B5FD" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="10" font-weight="700" letter-spacing="1">
+    <text x="292" y="89">HEAD</text><text x="292" y="103" fill="#A78BFA">ZONE 01</text>
+    <text x="294" y="174">TORSO</text><text x="294" y="188" fill="#A78BFA">ZONE 02</text>
+    <text x="289" y="290">LOWER</text><text x="289" y="304" fill="#A78BFA">ZONE 03</text>
+  </g>
+  <!-- radar corner brackets -->
+  <g stroke="#A78BFA" stroke-width="1.5" stroke-opacity=".7"><path d="M48 72H76M48 72V100M372 72H344M372 72V100M48 360H76M48 360V332M372 360H344M372 360V332"/></g>
+  <!-- Match insights header -->
+  <g transform="translate(38 432)">
+    <path d="M0 15V7H5V15M8 15V3H13V15M16 15V0H21V15" stroke="#A78BFA" stroke-width="2" fill="none" filter="url(#softGlow)"/>
+    <text x="32" y="13" fill="#E5E7EB" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" font-weight="700" letter-spacing="1.2">MATCH INSIGHTS</text>
+    <text x="280" y="13" fill="#8B5CF6" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="9" letter-spacing="1">LIVE DATA</text>
+  </g>
+  <!-- insight card -->
+  <rect x="32" y="466" width="356" height="206" rx="13" fill="#111827" fill-opacity=".42" stroke="#8B5CF6" stroke-opacity=".42"/>
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" fill="#D1D5DB">
+    <g transform="translate(48 493)">
+      <circle cx="7" cy="0" r="6" stroke="#A78BFA" stroke-width="1.3"/><path d="M7 -9V-4M7 4V9M-2 0H2M12 0H16" stroke="#A78BFA" stroke-width="1.2"/>
+      <text x="27" y="4" letter-spacing=".8">AIM</text><rect x="128" y="-4" width="156" height="8" rx="4" fill="#312B4B"/><rect x="128" y="-4" width="125" height="8" rx="4" fill="url(#bar)" filter="url(#softGlow)"/><text x="298" y="4" fill="#E9D5FF" font-weight="700">80%</text>
+    </g>
+    <g transform="translate(48 537)">
+      <path d="M1 5L8 -5L15 5M8 -5V9" stroke="#A78BFA" stroke-width="1.4"/><text x="27" y="4" letter-spacing=".8">MOVEMENT</text><rect x="128" y="-4" width="156" height="8" rx="4" fill="#312B4B"/><rect x="128" y="-4" width="108" height="8" rx="4" fill="url(#bar)"/><text x="298" y="4" fill="#E9D5FF" font-weight="700">69%</text>
+    </g>
+    <g transform="translate(48 581)">
+      <circle cx="8" cy="0" r="7" stroke="#A78BFA" stroke-width="1.3"/><path d="M8 -4V1L12 3" stroke="#A78BFA" stroke-width="1.2"/><text x="27" y="4" letter-spacing=".8">UTILITY</text><rect x="128" y="-4" width="156" height="8" rx="4" fill="#312B4B"/><rect x="128" y="-4" width="91" height="8" rx="4" fill="url(#bar)"/><text x="298" y="4" fill="#E9D5FF" font-weight="700">58%</text>
+    </g>
+    <g transform="translate(48 625)">
+      <path d="M1 -5L8 -9L15 -5L8 -1Z M1 0L8 4L15 0M1 5L8 9L15 5" stroke="#A78BFA" stroke-width="1.2" fill="none"/><text x="27" y="4" letter-spacing=".8">POSITION</text><rect x="128" y="-4" width="156" height="8" rx="4" fill="#312B4B"/><rect x="128" y="-4" width="116" height="8" rx="4" fill="url(#bar)"/><text x="298" y="4" fill="#E9D5FF" font-weight="700">74%</text>
+    </g>
+  </g>
+  <!-- trend graph card -->
+  <rect x="32" y="692" width="356" height="88" rx="12" fill="#111827" fill-opacity=".38" stroke="#8B5CF6" stroke-opacity=".38"/>
+  <g stroke="#8B5CF6" stroke-opacity=".16" stroke-width="1"><path d="M48 714H372M48 738H372M48 762H372"/></g>
+  <path d="M49 754C76 765 91 746 116 736S154 712 180 729S221 765 247 744S286 710 310 725S348 753 371 735" stroke="#A78BFA" stroke-width="2" stroke-linecap="round" filter="url(#softGlow)"/>
+  <g fill="#C4B5FD" filter="url(#softGlow)"><circle cx="116" cy="736" r="3"/><circle cx="180" cy="729" r="3"/><circle cx="247" cy="744" r="3"/><circle cx="310" cy="725" r="3"/></g>
+  <text x="48" y="708" fill="#9CA3AF" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="8" letter-spacing="1">PERFORMANCE TRACE</text>
+  <text x="327" y="708" fill="#A78BFA" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="8" letter-spacing="1">ROUND 01–24</text>
+  <!-- footer microtext -->
+  <path d="M32 817H388" stroke="#8B5CF6" stroke-opacity=".28"/>
+  <text x="34" y="834" fill="#6B5A91" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="8" letter-spacing="1.5">TACTICAL ANALYSIS // PLAYER TELEMETRY</text>
+  <text x="340" y="834" fill="#8B5CF6" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="8" letter-spacing="1">SYS.01</text>
+</svg>
