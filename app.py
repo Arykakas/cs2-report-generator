@@ -236,23 +236,7 @@ if generate_report:
                 letter-spacing: .055em;
               }}
             </style>
-            </style>
             """,
-        )
-        
-        # Add preview functionality
-        if "preview_html" in st.session_state:
-            st.divider()
-            st.subheader("Report Preview")
-            st.markdown(
-                f"""
-                <div style="border: 1px solid #444; border-radius: 8px; padding: 1rem; background-color: #111; overflow: auto; max-height: 70vh;">
-                    {st.session_state.preview_html}
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-            """
         )
 
     try:
@@ -322,19 +306,16 @@ if report_result:
             )
 st.space("large")
 st.caption("CS2 MATCH ANALYZER  /  ANALYSIS RUNS LOCALLY ON THIS MACHINE")
-
-# Preview functionality
 if "preview_html" in st.session_state:
-    st.divider()
-    st.subheader("Report Preview")
-    st.markdown(
-        f"""
-        <div style="border: 1px solid #444; border-radius: 8px; padding: 1rem; background-color: #111; overflow: auto; max-height: 70vh;">
-            {st.session_state.preview_html}
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-st.space("large")
-st.caption("CS2 MATCH ANALYZER  /  ANALYSIS RUNS LOCALLY ON THIS MACHINE")
+    st.space("small")
+    _, preview_center, _ = st.columns([0.7, 2.6, 0.7])
+    with preview_center:
+        with st.container(border=True, key="report_preview"):
+            st.subheader("Report preview", icon=":material/preview:")
+            st.caption("The preview is isolated from the upload page styles.")
+            st.iframe(
+                st.session_state.preview_html,
+                width="stretch",
+                height=1050,
+                alt="Preview of the generated CS2 match report",
+            )
