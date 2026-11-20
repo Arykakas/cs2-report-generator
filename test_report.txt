@@ -86,8 +86,8 @@ Self-blinds: 1
 Flashes that blinded teammates only: 1
 Flashes that blinded no one: 0
 Flash details (detonation tick, enemies, teammates, self, result):
+  72261, 1, 2, 1, enemy blinded
+  127217, 1, 0, 0, enemy blinded
+  52922, 1, 0, 0, enemy blinded
   134868, 1, 0, 0, enemy blinded
   122882, 0, 1, 0, teammates only
-  72261, 1, 2, 1, enemy blinded
-  52922, 1, 0, 0, enemy blinded
-  127217, 1, 0, 0, enemy blinded

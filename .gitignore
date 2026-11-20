@@ -7,6 +7,10 @@ env/
 *.dem
 *.bz2
 
+#UI/UX Design Pro Max
+*.claude
+*.codex
+
 # Python cache
 __pycache__/
 *.pyc
