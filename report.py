@@ -318,7 +318,7 @@ function selectHitWeapon(weapon) {{
       type: "scatter", mode: "markers", name: bulletPartLabels[part],
       x: hits.map(hit => hit.x), y: hits.map(hit => hit.y),
       customdata: hits.map(hit => [bulletPartLabels[part], hit.tick]),
-      marker: {{color: "rgba(0, 0, 0, 0.001)", size: 22, opacity: 0.01, line: {{width: 0}}}},
+      marker: {{color: "rgba(0, 0, 0, 0.001)", size: 11, opacity: 0.01, line: {{width: 0}}}},
       hovertemplate: "%{{customdata[0]}} hit<br>Tick %{{customdata[1]}}<extra></extra>"
     }};
   }});
