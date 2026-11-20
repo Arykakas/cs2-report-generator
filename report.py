@@ -182,15 +182,56 @@ weapon_buttons_html = "".join(
     f'<button type="button" class="weapon-button{" active" if weapon == default_hit_weapon else ""}" data-weapon="{escape(weapon, quote=True)}">{escape(info["label"])}</button>'
     for weapon, info in hit_model_data.items()
 )
-HIT_DOT_COLORS = {
-    "head": "#ef4444",
-    "chest": "#f97316",
-    "stomach": "#f97316",
-    "left_arm": "#3b82f6",
-    "right_arm": "#3b82f6",
-    "left_leg": "#3b82f6",
-    "right_leg": "#3b82f6",
-}
+def _polygon_path(points: list[tuple[float, float]]) -> str:
+    point_commands = [f"{'M' if index == 0 else 'L'} {x:.1f},{y:.1f}" for index, (x, y) in enumerate(points)]
+    return " ".join(point_commands) + " Z"
+
+
+def _bullet_hole_data_uri() -> str:
+    outer_points = []
+    inner_points = []
+    for index in range(32):
+        angle = (2 * math.pi * index) / 32
+        radius = 53 + 3.2 * math.sin(index * 2.7) + 2.0 * math.cos(index * 4.1)
+        outer_points.append((64 + radius * math.cos(angle), 64 + radius * math.sin(angle)))
+    for index in range(28):
+        angle = (2 * math.pi * index) / 28
+        radius = 43 + 2.2 * math.sin(index * 2.3) + 1.4 * math.cos(index * 3.7)
+        inner_points.append((64 + radius * math.cos(angle), 64 + radius * math.sin(angle)))
+
+    svg = f'''<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+<defs>
+  <radialGradient id="impact" cx="46%" cy="40%" r="64%">
+    <stop offset="0%" stop-color="#05070a"/>
+    <stop offset="42%" stop-color="#111820"/>
+    <stop offset="58%" stop-color="#343b43"/>
+    <stop offset="72%" stop-color="#d6d9dc"/>
+    <stop offset="82%" stop-color="#737b84"/>
+    <stop offset="100%" stop-color="#222a34"/>
+  </radialGradient>
+  <radialGradient id="tint" cx="50%" cy="50%" r="50%">
+    <stop offset="52%" stop-color="#9ca3af" stop-opacity="0"/>
+    <stop offset="83%" stop-color="#9ca3af" stop-opacity=".12"/>
+    <stop offset="100%" stop-color="#9ca3af" stop-opacity=".62"/>
+  </radialGradient>
+  <filter id="shadow" x="-40%" y="-40%" width="180%" height="180%">
+    <feGaussianBlur in="SourceAlpha" stdDeviation="2.2"/>
+    <feOffset dy="1.5"/>
+    <feComponentTransfer><feFuncA type="linear" slope=".55"/></feComponentTransfer>
+    <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+</defs>
+<path d="{_polygon_path(outer_points)}" fill="#1b222b" stroke="#737b84" stroke-width="2.3" filter="url(#shadow)"/>
+<path d="{_polygon_path(inner_points)}" fill="url(#impact)" stroke="#e2e6e9" stroke-opacity=".78" stroke-width="2.3"/>
+<circle cx="64" cy="64" r="25" fill="#080b0f" stroke="#434a52" stroke-width="3"/>
+<circle cx="64" cy="64" r="17" fill="#030508"/>
+<path d="M 64 17 L 67 26 M 100 32 L 91 39 M 111 65 L 101 64 M 94 99 L 87 90 M 61 111 L 62 101 M 29 93 L 38 87 M 17 60 L 27 61 M 35 29 L 42 38" stroke="#f1f5f9" stroke-opacity=".72" stroke-width="2.4" stroke-linecap="round"/>
+<path d="M 64 13 L 64 24 M 115 64 L 104 64 M 64 115 L 64 104 M 13 64 L 24 64" stroke="#9ca3af" stroke-opacity=".72" stroke-width="2" stroke-linecap="round"/>
+</svg>'''
+    return "data:image/svg+xml;base64," + base64.b64encode(svg.encode("utf-8")).decode("ascii")
+
+
+bullet_hole_texture = _bullet_hole_data_uri()
 BODY_ANCHORS = {
     "head": (512, 148, 24, 35),
     "chest": (512, 380, 82, 65),
@@ -243,14 +284,14 @@ hit_model_html = f"""
   <div class="bullet-heatmap-stage">
     {bullet_plot_html}
   </div>
-  <div class="bullet-heatmap-legend"><span><i class="dot head-dot"></i>Head</span><span><i class="dot torso-dot"></i>Chest / stomach</span><span><i class="dot limb-dot"></i>Arms / legs</span></div>
-  <p class="subtitle">Each dot represents one hit. Positions are approximated by hitgroup; weapon selections update the dots immediately.</p>
+  <div class="bullet-heatmap-legend"><span><i class="dot impact-dot"></i>Bullet impact</span></div>
+  <p class="subtitle">Each impact mark is one hit. Placement is approximated by hitgroup; hover a mark to see its tick.</p>
 </div>
 <script>
 const bulletPointsByWeapon = {bullet_points_json};
+const bulletHoleTexture = {json.dumps(bullet_hole_texture)};
 const bulletPartOrder = ["head", "chest", "stomach", "left_arm", "right_arm", "left_leg", "right_leg"];
-const bulletPartLabels = {{head: "Head", chest: "Chest", stomach: "Stomach", left_arm: "Left arm", right_arm: "Right arm", left_leg: "Left leg", right_leg: "Right leg"}};
-const bulletPartColors = {{head: "#ef4444", chest: "#f97316", stomach: "#f97316", left_arm: "#3b82f6", right_arm: "#3b82f6", left_leg: "#3b82f6", right_leg: "#3b82f6"}};
+const bulletPartLabels = {{"head": "Head", "chest": "Chest", "stomach": "Stomach", "left_arm": "Left arm", "right_arm": "Right arm", "left_leg": "Left leg", "right_leg": "Right leg"}};
 const bulletPlotLayout = {{
   images: [{{source: {json.dumps(human_svg_uri)}, xref: "x", yref: "y", x: 0, y: 0, sizex: 1024, sizey: 1536, xanchor: "left", yanchor: "top", sizing: "stretch", opacity: 1, layer: "below"}}],
   xaxis: {{range: [0, 1024], visible: false, showgrid: false, zeroline: false, showline: false, ticks: "", showticklabels: false, fixedrange: true, domain: [0, 1], constrain: "domain"}},
@@ -264,17 +305,24 @@ function selectHitWeapon(weapon) {{
     button.classList.toggle("active", button.dataset.weapon === weapon);
   }});
   const points = bulletPointsByWeapon[weapon];
+  const impactImages = points.map(hit => ({{
+    source: bulletHoleTexture,
+    xref: "x", yref: "y", x: hit.x, y: hit.y,
+    sizex: 70.4, sizey: 70.4, xanchor: "center", yanchor: "middle",
+    sizing: "stretch", opacity: 1, layer: "above", captureevents: false
+  }}));
+  const layoutForWeapon = {{...bulletPlotLayout, images: [bulletPlotLayout.images[0], ...impactImages]}};
   const traces = bulletPartOrder.map(part => {{
     const hits = points.filter(hit => hit.part === part);
     return {{
       type: "scatter", mode: "markers", name: bulletPartLabels[part],
       x: hits.map(hit => hit.x), y: hits.map(hit => hit.y),
       customdata: hits.map(hit => [bulletPartLabels[part], hit.tick]),
-      marker: {{color: bulletPartColors[part], size: 13, opacity: 0.56, line: {{width: 0}}}},
+      marker: {{color: "rgba(0, 0, 0, 0.001)", size: 22, opacity: 0.01, line: {{width: 0}}}},
       hovertemplate: "%{{customdata[0]}} hit<br>Tick %{{customdata[1]}}<extra></extra>"
     }};
   }});
-  Plotly.react("bullet-heatmap-chart", traces, bulletPlotLayout, {{displayModeBar: false, responsive: true}});
+  Plotly.react("bullet-heatmap-chart", traces, layoutForWeapon, {{displayModeBar: false, responsive: true}});
 }}
 document.querySelectorAll(".weapon-button").forEach(button => {{
   button.addEventListener("click", () => selectHitWeapon(button.dataset.weapon));
@@ -789,7 +837,7 @@ html_report = f"""<!doctype html>
     .bullet-heatmap-legend {{ display: flex; flex-wrap: wrap; justify-content: center; gap: 14px; margin: 5px 0 12px; color: #94a3b8; font-size: .82rem; }}
     .bullet-heatmap-legend span {{ display: inline-flex; align-items: center; gap: 6px; }}
     .dot {{ width: 10px; height: 10px; display: inline-block; border-radius: 50%; opacity: .9; }}
-    .head-dot {{ background: #ef4444; }} .torso-dot {{ background: #f97316; }} .limb-dot {{ background: #3b82f6; }}
+    .impact-dot {{ background: #9ca3af; }}
     details {{ padding: 0; overflow: hidden; }} details > summary {{ cursor: pointer; padding: 19px 22px; color: #e2e8f0; font-weight: 750; list-style-position: inside; }}
     details[open] > summary {{ border-bottom: 1px solid #334155; background: #223147; }}
     .details-content {{ padding: 8px 20px 20px; }} .details-content section {{ margin: 16px 0; padding: 20px; background: #172235; box-shadow: none; }}
