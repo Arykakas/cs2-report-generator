@@ -1,0 +1,161 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1320" viewBox="0 0 1800 1320" role="img" aria-labelledby="title desc">
+  <title id="title">CS2 Match Analyzer — Analysis module flow</title>
+  <desc id="desc">A deeper view of how selected player demo data flows through movement, aim, hit, flash, and utility analysis modules, then into report assembly and HTML and text outputs.</desc>
+  <defs>
+    <linearGradient id="bg" x2="0" y2="1"><stop stop-color="#10182b"/><stop offset="1" stop-color="#0b1020"/></linearGradient>
+    <linearGradient id="header" x2="1"><stop stop-color="#1c2941"/><stop offset="1" stop-color="#18233a"/></linearGradient>
+    <linearGradient id="accent" x2="1"><stop stop-color="#8b5cf6"/><stop offset="1" stop-color="#38bdf8"/></linearGradient>
+    <filter id="shadow" x="-15%" y="-15%" width="130%" height="140%"><feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#020617" flood-opacity=".35"/></filter>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0 10 5 0 10Z" fill="#7385a3"/></marker>
+    <marker id="arrowPurple" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0 10 5 0 10Z" fill="#a78bfa"/></marker>
+    <style>
+      text { font-family: Inter, "Segoe UI", Arial, sans-serif; fill: #e8eef9; }
+      .eyebrow { font-size: 13px; font-weight: 700; letter-spacing: 2px; fill: #a78bfa; }
+      .title { font-size: 32px; font-weight: 750; letter-spacing: -.5px; }
+      .subtitle { font-size: 15px; fill: #94a3b8; }
+      .section { font-size: 12px; font-weight: 750; letter-spacing: 1.7px; fill: #9aabc5; }
+      .head { font-size: 18px; font-weight: 700; }
+      .body { font-size: 14px; fill: #c0cadd; }
+      .small { font-size: 12px; fill: #8fa0ba; }
+      .file { font-size: 12px; font-weight: 700; fill: #a78bfa; }
+      .panel { fill: #172238; stroke: #34445f; stroke-width: 1.2; }
+      .inner { fill: #111a2d; stroke: #2c3c58; stroke-width: 1; }
+      .arrow { fill: none; stroke: #7385a3; stroke-width: 2; marker-end: url(#arrow); }
+      .arrow-purple { fill: none; stroke: #a78bfa; stroke-width: 2.4; marker-end: url(#arrowPurple); }
+      .bus { fill: none; stroke: #536784; stroke-width: 2; }
+    </style>
+  </defs>
+
+  <rect width="1800" height="1320" fill="url(#bg)"/>
+  <circle cx="1700" cy="80" r="240" fill="#7c3aed" opacity=".05"/>
+  <circle cx="80" cy="1180" r="260" fill="#0ea5e9" opacity=".035"/>
+  <text x="70" y="48" class="eyebrow">PROJECT MAP / ANALYSIS DETAIL</text>
+  <text x="70" y="91" class="title">Inside the analysis pipeline</text>
+  <text x="70" y="121" class="subtitle">Each module turns raw demo events into a small set of player-specific report metrics.</text>
+  <path d="M70 148H1730" stroke="#34425c"/>
+
+  <!-- Shared input and player context -->
+  <g filter="url(#shadow)">
+    <rect x="70" y="178" width="440" height="154" rx="16" fill="url(#header)" stroke="#465575"/>
+    <text x="96" y="212" class="section">INPUT / AWPY DEMO DATA</text>
+    <text x="96" y="247" class="head">Match demo</text>
+    <text x="96" y="275" class="body">shots · kills · grenades · blinds</text>
+    <text x="96" y="302" class="small">damages and stats are loaded/read when needed</text>
+
+    <rect x="610" y="178" width="520" height="154" rx="16" fill="url(#header)" stroke="#465575"/>
+    <text x="636" y="212" class="section">PLAYER CONTEXT / demo.py</text>
+    <text x="636" y="247" class="head">Resolve the selected player</text>
+    <text x="636" y="275" class="body">Match by name first, then Steam ID</text>
+    <text x="636" y="302" class="small">Pass player Steam ID, display name, and their shot rows onward</text>
+  </g>
+  <path d="M510 255H610" class="arrow-purple"/>
+
+  <text x="70" y="378" class="section">FEATURE ANALYSIS / cs2_report/analysis/</text>
+
+  <!-- Analysis module cards -->
+  <g filter="url(#shadow)">
+    <rect x="70" y="402" width="520" height="250" rx="16" class="panel"/>
+    <rect x="70" y="402" width="520" height="4" rx="2" fill="#38bdf8"/>
+    <text x="96" y="438" class="file">weapons.py</text>
+    <text x="96" y="471" class="head">Movement &amp; weapon use</text>
+    <text x="96" y="506" class="body">1  Collect the player's shot times.</text>
+    <text x="96" y="532" class="body">2  Request snapshots at those times and before shots.</text>
+    <text x="96" y="558" class="body">3  Join shots to player movement by time + Steam ID.</text>
+    <text x="96" y="584" class="body">4  Count moving shots by rifle, SMG, pistol, and sniper.</text>
+    <rect x="96" y="608" width="468" height="25" rx="7" class="inner"/>
+    <text x="108" y="625" class="small">Outputs: totals, moving %, speed ranges, scoped AWP count</text>
+
+    <rect x="640" y="402" width="520" height="250" rx="16" class="panel"/>
+    <rect x="640" y="402" width="520" height="4" rx="2" fill="#f59e0b"/>
+    <text x="666" y="438" class="file">aim.py</text>
+    <text x="666" y="471" class="head">Kill aim &amp; firing control</text>
+    <text x="666" y="506" class="body">1  Match each kill to the player's most recent shot.</text>
+    <text x="666" y="532" class="body">2  Compare firing direction with the victim's estimated head.</text>
+    <text x="666" y="558" class="body">3  Average deviation overall and by weapon.</text>
+    <text x="666" y="584" class="body">4  Flag fast crosshair movement before a shot.</text>
+    <rect x="666" y="608" width="468" height="25" rx="7" class="inner"/>
+    <text x="678" y="625" class="small">Also calculates pistol kill distance and range buckets</text>
+
+    <rect x="1210" y="402" width="520" height="250" rx="16" class="panel"/>
+    <rect x="1210" y="402" width="520" height="4" rx="2" fill="#fb7185"/>
+    <text x="1236" y="438" class="file">hits.py</text>
+    <text x="1236" y="471" class="head">Hit distribution &amp; body map</text>
+    <text x="1236" y="506" class="body">1  Load damage events caused by the player.</text>
+    <text x="1236" y="532" class="body">2  Fall back to kill hitgroups when damage data is absent.</text>
+    <text x="1236" y="558" class="body">3  Group hit counts by weapon and body part.</text>
+    <text x="1236" y="584" class="body">4  Map each hitgroup to an approximate silhouette location.</text>
+    <rect x="1236" y="608" width="468" height="25" rx="7" class="inner"/>
+    <text x="1248" y="625" class="small">Outputs: per-weapon hit data + interactive bullet-hole map</text>
+
+    <rect x="355" y="706" width="520" height="225" rx="16" class="panel"/>
+    <rect x="355" y="706" width="520" height="4" rx="2" fill="#34d399"/>
+    <text x="381" y="742" class="file">flashes.py</text>
+    <text x="381" y="775" class="head">Flash impact</text>
+    <text x="381" y="810" class="body">1  Find the player's thrown flash grenades.</text>
+    <text x="381" y="836" class="body">2  Associate nearby blindness events with each throw.</text>
+    <text x="381" y="862" class="body">3  Separate enemy, teammate, and self-blinds.</text>
+    <rect x="381" y="885" width="468" height="25" rx="7" class="inner"/>
+    <text x="393" y="902" class="small">Outputs: throw totals, blind totals, and per-flash results</text>
+
+    <rect x="925" y="706" width="520" height="225" rx="16" class="panel"/>
+    <rect x="925" y="706" width="520" height="4" rx="2" fill="#a78bfa"/>
+    <text x="951" y="742" class="file">utility_deaths.py + demo.stats</text>
+    <text x="951" y="775" class="head">Deaths &amp; match stats</text>
+    <text x="951" y="810" class="body">Utility deaths: victim is the selected player and weapon is utility.</text>
+    <text x="951" y="836" class="body">Core stats: K/D, ADR, KAST, headshot %, rounds played.</text>
+    <text x="951" y="862" class="body">Weapon constants provide categories, labels, and thresholds.</text>
+    <rect x="951" y="885" width="468" height="25" rx="7" class="inner"/>
+    <text x="963" y="902" class="small">Outputs: death count and the top stats cards</text>
+  </g>
+
+  <!-- Input fan-out -->
+  <path d="M870 332V365H330V402" class="bus"/>
+  <path d="M870 365H900V402" class="bus"/>
+  <path d="M900 365H1470V402" class="bus"/>
+  <path d="M330 365V392" class="arrow"/>
+  <path d="M900 365V392" class="arrow"/>
+  <path d="M1470 365V392" class="arrow"/>
+  <path d="M870 365V674H615V706" class="bus"/>
+  <path d="M870 674H1185V706" class="bus"/>
+  <path d="M615 674V696" class="arrow"/>
+  <path d="M1185 674V696" class="arrow"/>
+
+  <!-- Merge into report assembly -->
+  <path d="M615 931V966H870" class="bus"/>
+  <path d="M1185 931V966H870" class="bus"/>
+  <path d="M330 652V966H870" class="bus"/>
+  <path d="M900 652V966H870" class="bus"/>
+  <path d="M1470 652V966H870" class="bus"/>
+  <path d="M870 966V988" class="arrow-purple"/>
+
+  <g filter="url(#shadow)">
+    <rect x="290" y="1002" width="1160" height="112" rx="17" fill="url(#header)" stroke="#58658a"/>
+    <text x="320" y="1038" class="file">pipeline.py</text>
+    <text x="320" y="1072" class="head">Combine metrics → apply fixed diagnosis rules → prepare report context</text>
+    <text x="320" y="1096" class="small">HTML uses html.py + charts.py; text output is assembled alongside it.</text>
+  </g>
+  <path d="M870 1114V1140H570V1161" class="arrow-purple"/>
+  <path d="M870 1140H1230V1161" class="arrow-purple"/>
+
+  <g filter="url(#shadow)">
+    <rect x="300" y="1170" width="540" height="95" rx="15" fill="#102b30" stroke="#1d6657"/>
+    <text x="326" y="1206" class="head">HTML report</text>
+    <text x="326" y="1234" class="body">Stats · diagnosis cards · hit map · details</text>
+    <rect x="900" y="1170" width="540" height="95" rx="15" fill="#14253c" stroke="#365982"/>
+    <text x="926" y="1206" class="head">Text report</text>
+    <text x="926" y="1234" class="body">Readable match summary and key counts</text>
+  </g>
+
+  <!-- Experimental component -->
+  <rect x="1490" y="1002" width="240" height="263" rx="15" fill="#171a2b" stroke="#6d5b9c" stroke-dasharray="7 6"/>
+  <text x="1514" y="1040" class="file">archetype.py</text>
+  <text x="1514" y="1072" class="head" font-size="16">Prototype module</text>
+  <text x="1514" y="1102" class="small">Scores aggression,</text>
+  <text x="1514" y="1122" class="small">precision, and utility</text>
+  <text x="1514" y="1155" class="small">Its output is not currently</text>
+  <text x="1514" y="1175" class="small">connected to the visible</text>
+  <text x="1514" y="1195" class="small">report. Integration is</text>
+  <text x="1514" y="1215" class="small">still in progress.</text>
+
+  <text x="70" y="1295" class="small">CS2 MATCH ANALYZER  /  ANALYSIS MODULE FLOW  /  PROJECT ROOT</text>
+</svg>

@@ -1,21 +1,29 @@
 from pathlib import Path
 from html import escape
-from inspect import signature
 from base64 import b64encode
+import importlib
 import tempfile
 
 import streamlit as st
 
-from analysis_wrapper import run_analysis
+import analysis_wrapper as report_runner
+
+# Streamlit can keep locally imported modules cached across script reruns.
+report_runner = importlib.reload(report_runner)
 
 
 def _reset_demo_state() -> None:
-    for key in ("player_options", "player_options_error", "selected_player", "report_result", "preview_html"):
+    for key in ("player_options", "player_options_error", "selected_player", "report_result", "preview_report_version"):
         st.session_state.pop(key, None)
 
 
 def _clear_report() -> None:
     st.session_state.pop("report_result", None)
+    st.session_state.pop("preview_report_version", None)
+
+
+def _show_report_preview(version: str) -> None:
+    st.session_state.preview_report_version = version
 
 
 def _scan_player_roster(demo_file) -> None:
@@ -210,6 +218,7 @@ with center:
 
 if generate_report:
     st.session_state.pop("report_result", None)
+    st.session_state.pop("preview_report_version", None)
 
     def update_button_progress(fraction: float, _message: str = "") -> None:
         percent = max(0, min(100, round(fraction * 100)))
@@ -245,21 +254,20 @@ if generate_report:
             upload_name = Path(demo_file.name).name or "uploaded.dem"
             temp_demo_path = Path(temp_dir) / upload_name
             temp_demo_path.write_bytes(demo_file.getbuffer())
-            if "progress_callback" in signature(run_analysis).parameters:
-                html_report = run_analysis(
-                    temp_demo_path,
-                    selected_player,
-                    progress_callback=update_button_progress,
-                )
-            else:
-                update_button_progress(0.08)
-                html_report = run_analysis(temp_demo_path, selected_player)
+            html_reports = report_runner.run_analysis_versions(
+                temp_demo_path,
+                selected_player,
+                progress_callback=update_button_progress,
+            )
 
         update_button_progress(1.0)
         button_progress.empty()
         st.session_state.report_result = {
-            "html": html_report,
-            "file_name": f"{Path(demo_file.name).stem or 'match'}_report.html",
+            "html_reports": html_reports,
+            "file_names": {
+                "1.0": f"{Path(demo_file.name).stem or 'match'}_report.html",
+                "2.0": f"{Path(demo_file.name).stem or 'match'}_report_2.0.html",
+            },
             "player_name": st.session_state.player_options[selected_player],
             "demo_name": Path(demo_file.name).name,
         }
@@ -270,6 +278,10 @@ if generate_report:
             st.exception(exc)
 
 report_result = st.session_state.get("report_result")
+if report_result and "html_reports" not in report_result:
+    # Drop pre-version-picker results retained by an already-open app session.
+    st.session_state.pop("report_result", None)
+    report_result = None
 if report_result:
     st.space("small")
     _, result_center, _ = st.columns([0.7, 2.6, 0.7])
@@ -286,35 +298,66 @@ if report_result:
                 f'<strong>{escape(report_result["player_name"])}</strong></div>',
                 unsafe_allow_html=True,
             )
-            st.download_button(
+            with st.popover(
                 "Download HTML report",
-                data=report_result["html"],
-                file_name=report_result["file_name"],
-                mime="text/html",
-                icon=":material/download:",
                 type="primary",
-                width="content",
-                key="download_report",
-                on_click="ignore",
-            )
-            st.button(
+                icon=":material/download:",
+                key="download_report_options",
+            ):
+                st.caption("Choose a report version to download.")
+                st.download_button(
+                    "Download Report 1.0",
+                    data=report_result["html_reports"]["1.0"],
+                    file_name=report_result["file_names"]["1.0"],
+                    mime="text/html",
+                    width="stretch",
+                    key="download_report_v1",
+                    on_click="ignore",
+                )
+                st.download_button(
+                    "Download Report 2.0",
+                    data=report_result["html_reports"]["2.0"],
+                    file_name=report_result["file_names"]["2.0"],
+                    mime="text/html",
+                    width="stretch",
+                    key="download_report_v2",
+                    on_click="ignore",
+                )
+            with st.popover(
                 "Preview HTML report",
                 type="secondary",
-                width="content",
-                key="preview_report",
-                on_click=lambda: st.session_state.update(preview_html=report_result["html"]),
-            )
+                icon=":material/preview:",
+                key="preview_report_options",
+            ):
+                st.caption("Choose a report version to preview.")
+                st.button(
+                    "Preview Report 1.0",
+                    width="stretch",
+                    key="preview_report_v1",
+                    on_click=_show_report_preview,
+                    args=("1.0",),
+                )
+                st.button(
+                    "Preview Report 2.0",
+                    width="stretch",
+                    key="preview_report_v2",
+                    on_click=_show_report_preview,
+                    args=("2.0",),
+                )
 st.space("large")
 st.caption("CS2 MATCH ANALYZER  /  ANALYSIS RUNS LOCALLY ON THIS MACHINE")
-if "preview_html" in st.session_state:
+if "preview_report_version" in st.session_state and report_result:
     st.space("small")
     _, preview_center, _ = st.columns([0.7, 2.6, 0.7])
     with preview_center:
         with st.container(border=True, key="report_preview"):
-            st.subheader("Report preview", icon=":material/preview:")
+            st.subheader(
+                f"Report {st.session_state.preview_report_version} preview",
+                icon=":material/preview:",
+            )
             st.caption("The preview is isolated from the upload page styles.")
             st.iframe(
-                st.session_state.preview_html,
+                report_result["html_reports"][st.session_state.preview_report_version],
                 width="stretch",
                 height=1050,
                 alt="Preview of the generated CS2 match report",
