@@ -10,18 +10,21 @@ def render_html_report_v2(context: dict) -> str:
     archetype = context["archetype_analysis"]
     scores = archetype["scores"]
     score_labels = (
-        ("Aggression", scores.get("aggression", 0), "#fb7185"),
-        ("Precision", scores.get("precision", 0), "#38bdf8"),
-        ("Utility", scores.get("utility", 0), "#34d399"),
-        ("Positioning", scores.get("positioning", 0), "#a78bfa"),
+        ("Aggression", "aggression", scores.get("aggression", 0), "#fb7185"),
+        ("Precision", "precision", scores.get("precision", 0), "#38bdf8"),
+        ("Utility", "utility", scores.get("utility", 0), "#34d399"),
+        ("Positioning", "positioning", scores.get("positioning", 0), "#a78bfa"),
     )
-    score_cards = "".join(
-        f'<article class="score-card" style="--score-color:{color}">'
-        f'<span>{escape(label)}</span><strong>{float(value):.0f}</strong>'
-        f'<div class="score-track"><i style="width:{max(0, min(100, float(value))):.1f}%"></i></div>'
-        f'</article>'
-        for label, value, color in score_labels
-    )
+    score_cards = ""
+    for label, trait_key, value, color in score_labels:
+        is_max = "is-max" if scores.get(f"{trait_key}_is_max") else ""
+        score_cards += (
+            f'<article class="score-card {is_max}" style="--score-color:{color}">\n'
+            f'  <span class="label">{escape(label)}</span>\n'
+            f'  <strong class="value">{float(value):.0f}</strong>\n'
+            f'  <div class="score-track"><i style="width:{max(0, min(100, float(value))):.1f}%"></i></div>\n'
+            f'</article>\n'
+        )
 
     return f"""<!doctype html>
 <html lang="en">
@@ -50,6 +53,19 @@ def render_html_report_v2(context: dict) -> str:
     .focus-row {{ display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }}
     .focus-chip {{ padding: 9px 12px; border: 1px solid #475569; border-radius: 10px; background: #111a2d; color: #cbd5e1; font-size: .88rem; }}
     .scores {{ display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }}
+    .score-card {{ padding: 15px; border: 1px solid #334155; border-radius: 12px; background: #111a2d; transition: transform 0.2s, box-shadow 0.2s; }}\
+    .score-card.is-max {{ border: 2px solid #ffd700; box-shadow: 0 0 15px rgba(255, 215, 0, 0.3); transform: scale(1.02); }}\
+    .score-card span {{ color: #9aa9bf; font-size: .76rem; font-weight: 750; letter-spacing: .08em; text-transform: uppercase; }}\
+    .score-card strong {{ display: block; margin: 9px 0; color: var(--score-color); font-size: 1.8rem; }}\
+    .score-track {{ height: 6px; overflow: hidden; border-radius: 8px; background: #334155; }}\
+    .score-track i {{ display: block; height: 100%; background: var(--score-color); }}\
+    .score-card:hover {{ transform: scale(1.05); }}\
+    .score-card:hover .score-track i {{ filter: brightness(1.2); }}\
+    .score-card:hover {{ z-index: 10; }}\
+    .score-card:hover {{ box-shadow: 0 8px 24px rgba(0,0,0,0.5); }}\
+    .score-card:hover {{ background: #1e293b; }}\
+    .score-card:hover {{ border-color: #475569; }}\
+
     .score-card {{ padding: 15px; border: 1px solid #334155; border-radius: 12px; background: #111a2d; }}
     .score-card span {{ color: #9aa9bf; font-size: .76rem; font-weight: 750; letter-spacing: .08em; text-transform: uppercase; }}
     .score-card strong {{ display: block; margin: 9px 0; color: var(--score-color); font-size: 1.8rem; }}
@@ -100,7 +116,7 @@ def render_html_report_v2(context: dict) -> str:
       <p class="archetype-summary">{escape(str(archetype["summary"]))}</p>
       <div class="focus-row">
         <span class="focus-chip">Primary strength: <strong>{escape(str(archetype["primary_trait"]))}</strong></span>
-        <span class="focus-chip">Next focus: <strong>{escape(str(archetype["opportunity"]))}</strong></span>
+        <span class="focus-chip">Next focus: <strong>{escape(str(archetype.get("opportunity", "N/A")))}</strong></span>
       </div>
     </section>
     <section>

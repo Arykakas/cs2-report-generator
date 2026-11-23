@@ -7,6 +7,31 @@ import polars as pl
 from .constants import RIFLE_WEAPONS, WEAPON_LABELS
 from .rendering.charts import render_velocity_chart
 from .rendering.html import render_diagnosis_cards
+def get_qualitative_label(value, label_type: str) -> str:
+    """Returns a qualitative description for a given metric."""
+    if label_type == "kd":
+        if value < 1.0: return "Struggling to impact"
+        if value <= 1.5: return "Steady contribution"
+        return "High impact"
+    if label_type == "adr":
+        if value < 60: return "Minimal damage output"
+        if value <= 80: return "Consistent pressure"
+        return "Primary threat"
+    if label_type == "kast":
+        if value < 60: return "Inconsistent engagement"
+        if value <= 75: return "Reliable participation"
+        return "Highly active"
+    if label_type == "hs":
+        if value < 20: return "Focus on body shots"
+        if value <= 30: return "Solid accuracy"
+        return "Elite precision"
+    if label_type == "accuracy":
+        if value < 15: return "Poor shot selection"
+        if value <= 30: return "Controlled firing"
+        return "Disciplined execution"
+    return ""
+
+
 
 
 def number(value, default: float = 0.0) -> float:
@@ -106,11 +131,17 @@ def build_report_context(
     kills = int(number(player_stats.get("kills")))
     deaths = int(number(player_stats.get("deaths")))
     kd_display = f"{kills / deaths:.2f}" if deaths else f"{kills:.2f}"
+    adr_display = f"{number(player_stats.get('adr')):.1f}"
+    kast_display = f"{number(player_stats.get('kast')):.1f}%"
+    hs_display = f"{number(player_stats.get('headshot_pct')):.1f}%"
+    accuracy_display = f"{number(player_stats.get('accuracy')):.1f}%"
+
     stats_cards = "".join((
-        f'<div class="stat-card"><span class="stat-label">K/D</span><strong>{kd_display}</strong></div>',
-        f'<div class="stat-card"><span class="stat-label">ADR</span><strong>{number(player_stats.get("adr")):.1f}</strong></div>',
-        f'<div class="stat-card"><span class="stat-label">KAST</span><strong>{number(player_stats.get("kast")):.1f}%</strong></div>',
-        f'<div class="stat-card"><span class="stat-label">HS%</span><strong>{number(player_stats.get("headshot_pct")):.1f}%</strong></div>',
+        f'<div class="stat-card"><span class="stat-label">K/D</span><strong>{kd_display}</strong> <small>({get_qualitative_label(kills / deaths if deaths else kills, "kd")})</small></div>',
+        f'<div class="stat-card"><span class="stat-label">ADR</span><strong>{adr_display}</strong> <small>({get_qualitative_label(number(player_stats.get("adr")), "adr")})</small></div>',
+        f'<div class="stat-card"><span class="stat-label">KAST</span><strong>{kast_display}</strong> <small>({get_qualitative_label(number(player_stats.get("kast")), "kast")})</small></div>',
+        f'<div class="stat-card"><span class="stat-label">HS%</span><strong>{hs_display}</strong> <small>({get_qualitative_label(number(player_stats.get("headshot_pct")), "hs")})</small></div>',
+        f'<div class="stat-card"><span class="stat-label">Accuracy</span><strong>{accuracy_display}</strong> <small>({get_qualitative_label(number(player_stats.get("accuracy")), "accuracy")})</small></div>',
     ))
     categories = (
         ("Rifle", "rifle_total", "rifle_moving_count", "rifle_moving_percentage"),

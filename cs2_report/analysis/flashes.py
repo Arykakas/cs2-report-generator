@@ -93,6 +93,14 @@ def analyze_flashes(demo, player_steamid: int) -> dict:
             }
         )
 
+    # Score utility by the share of the player's flash throws that blinded at
+    # least one enemy. This is a per-throw rate (0..1), matching the contract
+    # consumed by calculate_player_scores.
+    successful_flash_throws = sum(detail["enemies"] > 0 for detail in flash_details)
+    flash_success_rate = (
+        successful_flash_throws / flash_count if flash_count else 0.0
+    )
+
     return {
         "flash_grenades": flash_grenades,
         "player_blinds": player_blinds,
@@ -104,4 +112,6 @@ def analyze_flashes(demo, player_steamid: int) -> dict:
         "flashes_blinding_no_one": flashes_blinding_no_one,
         "flash_teammate_or_self_count": flash_teammate_or_self_count,
         "flash_details": flash_details,
+        "successful_flash_throws": successful_flash_throws,
+        "flashbang_success_rate": flash_success_rate,
     }

@@ -31,3 +31,16 @@
 - Preserve existing behaviour unless explicitly requested.
 - Verify imports and function calls after refactoring.
 - Review the final Git diff.
+
+## Code Verification Before Completion
+
+- Never assume code is correct simply because it was written.
+- Inspect all referenced variables, functions and imports.
+- Verify that every referenced constant is defined or imported.
+- Check function signatures against their callers.
+- Check dictionary keys and expected data structures.
+- Run tests that exercise the modified code paths.
+- Do not stop after fixing the first error if further
+  related errors are likely.
+- Never invent missing business logic or data.
+- Preserve existing functionality and expected outputs.

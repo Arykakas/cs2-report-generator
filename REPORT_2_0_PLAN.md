@@ -19,6 +19,7 @@ Positioning currently scores rifle movement discipline and utility deaths per ro
 
 ## Module 2: Performance Snapshot
 - [ ] Contextualize existing stats (Accuracy, ADR, etc.) with qualitative labels
+- [ ] Add "Performance-Aware" feedback to archetypes: Ensure narrative summaries reflect whether a player is meeting expectations for their role (e.g., a Rusher with low K/D should receive corrective coaching rather than just praise).
 
 ## Module 3: The Coaching Lab
 - [ ] Define Skill Pillars:
