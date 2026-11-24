@@ -12,6 +12,7 @@ def analyze_flashes(demo, player_steamid: int) -> dict:
         )
         .select("thrower_steamid", "entity_id", "entity_serial", "end_tick")
         .unique()
+        .sort(["end_tick", "entity_id", "entity_serial"])
         .to_dicts()
     )
     player_blinds = demo.blinds.filter(
@@ -24,7 +25,12 @@ def analyze_flashes(demo, player_steamid: int) -> dict:
     for blind in player_blinds:
         nearest_flash = min(
             flash_grenades,
-            key=lambda grenade: abs(blind["tick"] - grenade["end_tick"]),
+            key=lambda grenade: (
+                abs(blind["tick"] - grenade["end_tick"]),
+                grenade["end_tick"],
+                grenade["entity_id"],
+                grenade["entity_serial"],
+            ),
             default=None,
         )
         if nearest_flash and abs(blind["tick"] - nearest_flash["end_tick"]) <= 2:
@@ -101,6 +107,11 @@ def analyze_flashes(demo, player_steamid: int) -> dict:
         successful_flash_throws / flash_count if flash_count else 0.0
     )
 
+    # Calculate penalty: teammates and self blinds reduce the utility score.
+    # We'll use a simple count-based penalty for now.
+    total_penalties = sum(detail["teammates"] + detail["self"] for detail in flash_details)
+    penalty_factor = (total_penalties / max(1, flash_count))
+
     return {
         "flash_grenades": flash_grenades,
         "player_blinds": player_blinds,
@@ -114,4 +125,6 @@ def analyze_flashes(demo, player_steamid: int) -> dict:
         "flash_details": flash_details,
         "successful_flash_throws": successful_flash_throws,
         "flashbang_success_rate": flash_success_rate,
+        "utility_penalty": penalty_factor,
+        "trait_components": {},
     }

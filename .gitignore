@@ -10,6 +10,7 @@ env/
 #UI/UX Design Pro Max
 *.claude
 *.codex
+*.github
 
 # Python cache
 __pycache__/

@@ -22,10 +22,6 @@ def _clear_report() -> None:
     st.session_state.pop("preview_report_version", None)
 
 
-def _show_report_preview(version: str) -> None:
-    st.session_state.preview_report_version = version
-
-
 def _scan_player_roster(demo_file) -> None:
     """Read the uploaded demo once and store players for the dropdown."""
     st.session_state.player_options = {}
@@ -298,67 +294,31 @@ if report_result:
                 f'<strong>{escape(report_result["player_name"])}</strong></div>',
                 unsafe_allow_html=True,
             )
-            with st.popover(
-                "Download HTML report",
-                type="primary",
+    report_version = st.segmented_control(
+        "Report version",
+        options=("2.0", "1.0"),
+        default="2.0",
+        format_func=lambda version: f"Report {version}",
+        key="preview_report_version",
+    )
+    if report_version:
+        st.iframe(
+            report_result["html_reports"][report_version],
+            width="stretch",
+            height="content",
+            alt=f"Report {report_version} for {report_result['player_name']}",
+        )
+        with st.container(horizontal=True, horizontal_alignment="right"):
+            st.download_button(
+                "Download report",
+                data=report_result["html_reports"][report_version],
+                file_name=report_result["file_names"][report_version],
+                mime="text/html",
                 icon=":material/download:",
-                key="download_report_options",
-            ):
-                st.caption("Choose a report version to download.")
-                st.download_button(
-                    "Download Report 1.0",
-                    data=report_result["html_reports"]["1.0"],
-                    file_name=report_result["file_names"]["1.0"],
-                    mime="text/html",
-                    width="stretch",
-                    key="download_report_v1",
-                    on_click="ignore",
-                )
-                st.download_button(
-                    "Download Report 2.0",
-                    data=report_result["html_reports"]["2.0"],
-                    file_name=report_result["file_names"]["2.0"],
-                    mime="text/html",
-                    width="stretch",
-                    key="download_report_v2",
-                    on_click="ignore",
-                )
-            with st.popover(
-                "Preview HTML report",
-                type="secondary",
-                icon=":material/preview:",
-                key="preview_report_options",
-            ):
-                st.caption("Choose a report version to preview.")
-                st.button(
-                    "Preview Report 1.0",
-                    width="stretch",
-                    key="preview_report_v1",
-                    on_click=_show_report_preview,
-                    args=("1.0",),
-                )
-                st.button(
-                    "Preview Report 2.0",
-                    width="stretch",
-                    key="preview_report_v2",
-                    on_click=_show_report_preview,
-                    args=("2.0",),
-                )
-st.space("large")
+                width="content",
+                key="download_report",
+                on_click="ignore",
+            )
+
+
 st.caption("CS2 MATCH ANALYZER  /  ANALYSIS RUNS LOCALLY ON THIS MACHINE")
-if "preview_report_version" in st.session_state and report_result:
-    st.space("small")
-    _, preview_center, _ = st.columns([0.7, 2.6, 0.7])
-    with preview_center:
-        with st.container(border=True, key="report_preview"):
-            st.subheader(
-                f"Report {st.session_state.preview_report_version} preview",
-                icon=":material/preview:",
-            )
-            st.caption("The preview is isolated from the upload page styles.")
-            st.iframe(
-                report_result["html_reports"][st.session_state.preview_report_version],
-                width="stretch",
-                height=1050,
-                alt="Preview of the generated CS2 match report",
-            )

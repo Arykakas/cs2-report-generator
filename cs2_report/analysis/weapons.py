@@ -120,4 +120,5 @@ def analyze_weapon_movement(demo, target_shots: pl.DataFrame, player_steamid: in
         "moving_percentage": moving_percentage,
         "total_shots_count": rifle_total,
         "moving_shots_count": rifle_moving_count,
+        "trait_components": {},
     }

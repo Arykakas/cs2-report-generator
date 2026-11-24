@@ -286,4 +286,13 @@ const initialHitWeapon = {json.dumps(default_hit_weapon)};
 if (initialHitWeapon) selectHitWeapon(initialHitWeapon);
 </script>
 """
-    return {"hit_model_data": hit_model_data, "hit_model_html": hit_model_html}
+    total_hits = sum(info["total"] for info in hit_model_data.values())
+    head_hits = sum(info["counts"].get("head", 0) for info in hit_model_data.values())
+    headshot_percentage = head_hits / total_hits * 100 if total_hits else 0.0
+    return {
+        "hit_model_data": hit_model_data,
+        "hit_model_html": hit_model_html,
+        "headshot_percentage": headshot_percentage,
+        "hit_count": total_hits,
+        "trait_components": {},
+    }

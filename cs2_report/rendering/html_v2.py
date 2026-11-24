@@ -15,6 +15,14 @@ def render_html_report_v2(context: dict) -> str:
         ("Utility", "utility", scores.get("utility", 0), "#34d399"),
         ("Positioning", "positioning", scores.get("positioning", 0), "#a78bfa"),
     )
+    tied_distinctions = archetype.get("tied_distinctions", [])
+    distinction_html = ""
+    if tied_distinctions:
+        distinction_html = (
+            '<div class="focus-row"><span class="focus-chip">Tied distinctions: '
+            f'<strong>{escape(" + ".join(tied_distinctions))}</strong></span></div>'
+        )
+
     score_cards = ""
     for label, trait_key, value, color in score_labels:
         is_max = "is-max" if scores.get(f"{trait_key}_is_max") else ""
@@ -33,10 +41,10 @@ def render_html_report_v2(context: dict) -> str:
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>CS2 Report 2.0 — {player}</title>
   <style>
-    :root {{ color-scheme: dark; font-family: Inter, "Segoe UI", sans-serif; color: #eef2ff; background: #0b1120; }}
+    :root {{ color-scheme: normal; font-family: Inter, "Segoe UI", sans-serif; color: #eef2ff; background: transparent; }}
     * {{ box-sizing: border-box; }}
     html {{ scroll-behavior: smooth; scroll-padding-top: 24px; }}
-    body {{ margin: 0; padding: 34px 18px 60px; background: radial-gradient(ellipse at 50% -20%, #24334d, #0b1120 65%); }}
+    body {{ margin: 0; padding: 34px 18px 60px; background: transparent; }}
     main {{ width: min(1180px, 100%); margin: 0 auto; }}
     header, section, details {{ border: 1px solid #334155; border-radius: 16px; background: #172235; box-shadow: 0 14px 36px #02061744; }}
     header {{ padding: 28px; margin-bottom: 18px; background: linear-gradient(120deg, #1c2a42, #18223a 65%, #251d42); }}
@@ -118,9 +126,11 @@ def render_html_report_v2(context: dict) -> str:
         <span class="focus-chip">Primary strength: <strong>{escape(str(archetype["primary_trait"]))}</strong></span>
         <span class="focus-chip">Next focus: <strong>{escape(str(archetype.get("opportunity", "N/A")))}</strong></span>
       </div>
+      {distinction_html}
     </section>
     <section>
       <h2>Trait scores</h2>
+      <p class="muted">Scores compare eligible teammates in this match. Enemy metrics are context only and do not enter ranking.</p>
       <div class="scores">{score_cards}</div>
       <p class="muted">Positioning score reflects rifle movement discipline and utility deaths per round.</p>
     </section>

@@ -8,7 +8,11 @@ import sys
 import polars as pl
 
 from .analysis.aim import analyze_aim
-from .analysis.archetype import analyze_archetype, calculate_player_scores, generate_narrative
+from .analysis.archetype import (
+    calculate_player_scores,
+    calculate_tie_aware_ranks,
+    build_archetype_result,
+)
 from .analysis.flashes import analyze_flashes
 from .analysis.hits import analyze_hits
 from .analysis.utility_deaths import analyze_utility_deaths
@@ -17,7 +21,6 @@ from .demo import load_demo, resolve_player
 from .report_common import build_report_context, headshot_percentage, number
 from .report_v1 import generate as generate_report_v1
 from .report_v2 import generate as generate_report_v2
-
 
 REPORT_GENERATORS = {
     "1.0": generate_report_v1,
@@ -56,78 +59,194 @@ def _analyze_player(demo, player_name: str, player_id: int, shots) -> tuple[dict
     return hits, movement, aim, utility_deaths, flashes
 
 
-def _archetype_inputs(hit_data: dict, aim: dict, flashes: dict, movement: dict, deaths, stats: dict, player_name: str = None, match_context: list[dict] = None) -> dict:
-    """Score four match traits and build a structured coaching summary using relative ranking."""
-    current_scores = None
+def build_match_context(demo, player_name, shots) -> tuple[list[dict], list[dict], list[dict]]:
+    """Build normalized player records, teammates, and enemy context."""
+    selected_stats = demo.stats.filter(pl.col("name") == player_name)
+    if selected_stats.is_empty():
+        return [], [], []
 
-    if match_context and player_name:
-        # Find the current player's scores in the context
-        current_scores = next((p["scores"] for p in match_context if p["name"] == player_name), None)
-        
-        if current_scores:
-            # Calculate percentile ranks for each trait relative to others in the match
-            traits = ["aggression", "precision", "utility", "positioning"]
-            for trait in traits:
-                original_score = current_scores[trait]
-                all_scores = [p["scores"][trait] for p in match_context]
-                max_score = max(all_scores) if all_scores else 0
-                
-                sorted_scores = sorted(all_scores)
-                rank = sorted_scores.index(original_score)
-                current_scores[trait] = (rank / len(all_scores)) * 100
-                
-                # Add a flag if this player had the max score for this trait
-                current_scores[f"{trait}_is_max"] = original_score == max_score
+    selected_row = selected_stats.row(0, named=True)
+    current_player_team = selected_row.get("team", "T")
+    records = []
+    teammates = []
+    enemies = []
 
-    # Archetype Selection Logic based on percentiles
-    if current_scores["aggression"] >= 80 and current_scores["precision"] < 75:
-        archetype = "The High-Octane Rusher"
-    elif current_scores["precision"] >= 80 and current_scores["aggression"] < 70:
-        archetype = "The Patient Marksman"
-    elif current_scores["utility"] >= 75:
-        archetype = "The Tactical Anchor"
-    elif current_scores["positioning"] >= 85 and current_scores["aggression"] < 65:
-        archetype = "The Disciplined Anchor"
-    else:
-        archetype = "The Versatile All-Rounder"
+    for name in demo.stats["name"].unique().to_list():
+        _, p_name, p_shots = resolve_player(demo, name)
+        stats_frame = demo.stats.filter(pl.col("name") == name)
+        if stats_frame.is_empty():
+            continue
 
-    # Determine if primary (highest score in their category)
-    primary_trait = ""
-    if archetype == "The High-Octane Rusher": primary_trait = "Aggression"
-    elif archetype == "The Patient Marksman": primary_trait = "Precision"
-    elif archetype == "The Tactical Anchor": primary_trait = "Utility"
-    elif archetype == "The Disciplined Anchor": primary_trait = "Positioning"
-    else: primary_trait = "Balance"
+        row = stats_frame.row(0, named=True)
+        team = row.get("team", "T")
+        rounds_played = int(row.get("rounds_played", 0))
+        is_active = rounds_played >= 3 and len(p_shots) >= 10
 
-    is_primary = False
-    if primary_trait != "Balance":
-        # We need the raw scores to determine absolute highest.
-        # Since we overwrote current_scores with percentiles, let's recalculate or use a different approach.
-        # For now, I'll just set it based on the percentile being near 100 (top rank).
-        if current_scores[primary_trait.lower()] >= 95: # Close enough to top for this prototype
-            is_primary = True
+        opening_engagements = 0
+        if "round" in p_shots.columns:
+            round_shots = p_shots.sort("tick")
+            for round_number in round_shots["round"].unique().to_list():
+                in_round = round_shots.filter(pl.col("round") == round_number)
+                if in_round.is_empty():
+                    continue
+                first_tick = in_round["tick"].min()
+                first_shot = demo.shots.filter(pl.col("tick") == first_tick)
+                if not first_shot.is_empty() and first_shot.get_column("name")[0] == p_name:
+                    opening_engagements += 1
+        elif not p_shots.is_empty():
+            opening_engagements = 1
 
-    opportunity = "Trigger Discipline" if archetype == "The High-Octane Rusher" else \
-                  "Positioning Variety" if archetype == "The Patient Marksman" else \
-                  "Aggression Timing" if archetype == "The Tactical Anchor" else \
-                  "Space Taking" if archetype == "The Disciplined Anchor" else \
-                  "Specialization"
+        record = {
+            "name": p_name,
+            "team": team,
+            "rounds_played": rounds_played,
+            "participation_score": rounds_played / max(1, int(row.get("total_rounds", 1))),
+            "raw_stats": {
+                "kd": float(row.get("kills", 0)) / max(1, float(row.get("deaths", 1))),
+                "adr": float(row.get("adr", 0)),
+                "headshot_pct": float(row.get("headshot_percentage", 0)),
+            },
+            "trait_components": {
+                "aggression": {"raw": opening_engagements, "count": rounds_played},
+                "precision": {"raw": 0, "count": 0},
+                "utility": {"raw": 0, "count": 0},
+                "positioning": {"raw": 0, "count": 0},
+            },
+        }
+
+        if p_name == player_name:
+            records.append(record)
+        elif is_active and team == current_player_team:
+            teammates.append(record)
+        else:
+            enemies.append(record)
+
+    return records, teammates, enemies
+
+
+def _score_relative_player(demo, record: dict, player_id: int = None, shots=None, hit_data: dict = None, movement: dict = None, flashes: dict = None, utility_deaths=None) -> dict:
+    """Build a raw four-trait score for one eligible teammate comparison participant."""
+    if hit_data is None:
+        player_id, _, shots = resolve_player(demo, record["name"])
+        hit_data = analyze_hits(demo, player_id)
+        movement = analyze_weapon_movement(demo, shots, player_id)
+        flashes = analyze_flashes(demo, player_id)
+        utility_deaths = analyze_utility_deaths(demo, record["name"])["utility_deaths"]
+
+    stats_frame = demo.stats.filter(pl.col("name") == record["name"])
+    if stats_frame.is_empty():
+        return {"name": record["name"], "scores": None, "available": False}
+
+    stats = stats_frame.row(0, named=True)
+    rounds_played = int(stats.get("rounds_played", 0))
+    shot_count = len(shots) if shots is not None else int(hit_data.get("hit_count", 0))
+    flash_count = int(flashes.get("flash_count", 0))
+    utility_death_count = int(utility_deaths.height)
+
+    hit_data = dict(hit_data)
+    hit_data["count"] = shot_count
+
+    positioning_data = {
+        "opening_engagements": record["trait_components"]["aggression"]["raw"],
+        "rounds_played": rounds_played,
+        "utility_deaths": utility_death_count,
+        "utility_damage": 0,
+        "rifle_moving_percentage": movement.get("rifle_moving_percentage", 0),
+    }
+    raw_scores = calculate_player_scores(hit_data, {}, flashes, positioning_data)
+
+    available = rounds_played >= 3 and shot_count >= 10
+    return {
+        "name": record["name"],
+        "scores": raw_scores,
+        "available": available,
+        "sample_counts": {
+            "rounds": rounds_played,
+            "shots": shot_count,
+            "flashes": flash_count,
+        },
+    }
+
+
+def _archetype_inputs(hit_data: dict, aim: dict, flashes: dict, movement: dict, deaths, stats: dict, player_name: str = None, match_context: list[dict] = None, comparison_scores: list[dict] = None) -> dict:
+    """Build raw and tie-aware relative trait scores for the selected player."""
+    utility_death_rate = (
+        max(0, int(deaths.height))
+        / max(1, int(stats.get("rounds_played", 1)))
+        * 100
+    )
+    positioning_data = {
+        "opening_engagements": next((
+            record["trait_components"]["aggression"]["raw"]
+            for record in (match_context or [])
+            if record["name"] == player_name
+        ), 0),
+        "rounds_played": int(stats.get("rounds_played", 1)),
+        "utility_deaths": int(deaths.height),
+        "utility_damage": 0,
+        "rifle_moving_percentage": movement.get("rifle_moving_percentage", 0),
+    }
+    raw_scores = calculate_player_scores(hit_data, aim, flashes, positioning_data)
+
+    traits = ("aggression", "precision", "utility", "positioning")
+    eligible_comparisons = [
+        item for item in (comparison_scores or [])
+        if item.get("available") and item.get("scores")
+    ]
+    comparison_values = {
+        trait: [item["scores"][trait] for item in eligible_comparisons]
+        for trait in traits
+    }
+    ranked_scores = dict(raw_scores)
+
+    selected_comparison = next((
+        item for item in (comparison_scores or [])
+        if item.get("name") == player_name
+    ), None)
+    selected_available = bool(selected_comparison and selected_comparison.get("available"))
+
+    for trait in traits:
+        if not selected_available:
+            ranked_scores[trait] = 0.0
+            ranked_scores[f"{trait}_rank"] = None
+            ranked_scores[f"{trait}_is_max"] = False
+            ranked_scores[f"{trait}_is_tied_leader"] = False
+            continue
+        ranking = calculate_tie_aware_ranks(comparison_values[trait], higher_is_better=True)
+        relative_score = ranking["relative_scores"][raw_scores[trait]]
+        ranked_scores[trait] = relative_score
+        ranked_scores[f"{trait}_rank"] = ranking["ranks"][raw_scores[trait]]
+        ranked_scores[f"{trait}_is_max"] = ranking["leader_flags"][raw_scores[trait]]
+        ranked_scores[f"{trait}_is_tied_leader"] = raw_scores[trait] in ranking["tied_leaders"]
+
+    ranked_scores["raw_scores"] = {
+        trait: raw_scores[trait]
+        for trait in traits
+    }
+    ranked_scores["comparison_players"] = [
+        item["name"] for item in eligible_comparisons
+    ]
+    ranked_scores["availability"] = {
+        "eligible": selected_available,
+        "reason": "insufficient_samples" if not selected_available else "eligible",
+    }
+    ranked_scores["sample_counts"] = (
+        selected_comparison.get("sample_counts", {})
+        if selected_comparison
+        else {}
+    )
+
+    archetype_result = build_archetype_result(ranked_scores, stats)
 
     return {
-        "archetype": archetype,
-        "scores": current_scores,
-        "primary_trait": primary_trait,
-        "is_primary": is_primary,
-        "summary": generate_narrative(archetype, current_scores, stats),
-        "opportunity": opportunity,
+        **archetype_result,
         "score_basis": {
             "headshot_percentage": hit_data.get("headshot_percentage"),
             "flashbang_success_rate": flashes.get("flashbang_success_rate"),
             "rifle_moving_percentage": movement.get("rifle_moving_percentage"),
-            "utility_death_rate_per_round": (max(0, int(deaths.height)) / max(1, int(stats.get("rounds_played", 1)))) * 100,
+            "utility_death_rate_per_round": utility_death_rate,
         },
     }
-
 
 def main() -> None:
     args = parse_args()
@@ -138,32 +257,56 @@ def main() -> None:
     _emit_progress(0.22, "Finding the selected player")
     player_id, player_name, shots = resolve_player(demo, args.player.strip())
 
-    _emit_progress(0.38, "Analyzing all players for context")
-    all_names = demo.stats["name"].unique().to_list()
-    match_context = []
-    for name in all_names:
-        p_id, p_name, p_shots = resolve_player(demo, name)
-        h, m, a, u, f = _analyze_player(demo, p_name, p_id, p_shots)
-        s_frame = demo.stats.filter(pl.col("name") == p_name)
-        p_stats = s_frame.row(0, named=True)
-        positioning_data = {
-            "rounds_played": p_stats.get("rounds_played", p_stats.get("rounds", 0)),
-            "rifle_moving_percentage": m.get("rifle_moving_percentage", 0),
-            "utility_deaths": u.height,
-        }
-        scores = calculate_player_scores(h["hit_model_data"], a, f, positioning_data)
-        match_context.append({"name": p_name, "scores": scores})
+    # --- Build Context Records (Teammates/Enemies/Normalized Stats) ---
+    records, teammates, enemies = build_match_context(demo, player_name, shots)
 
-    hits, movement, aim, utility_deaths, flashes = _analyze_player(
-        demo, player_name, player_id, shots
+    _emit_progress(0.38, "Analyzing all players for context")
+    hits = analyze_hits(demo, player_id)
+    movement = analyze_weapon_movement(demo, shots, player_id)
+    aim = analyze_aim(
+        demo, shots, player_id,
+        movement["angular_velocity_by_tick"],
+        movement["angular_deviation_by_tick"],
+        movement["shots_with_velocity"],
     )
+    flashes = analyze_flashes(demo, player_id)
+    utility_deaths = analyze_utility_deaths(demo, player_name)["utility_deaths"]
+
+    # Update stats frame and check for presence
     stats_frame = demo.stats.filter(pl.col("name") == player_name)
     if stats_frame.is_empty():
         raise ValueError(f"No basic stats found for player name: {player_name}")
     player_stats = stats_frame.row(0, named=True)
-    archetype = _archetype_inputs(
-        hits["hit_model_data"], aim, flashes, movement, utility_deaths, player_stats, 
-        player_name=player_name, match_context=match_context
+
+    # Populate trait components in the context records
+    hits["trait_components"]["precision"] = {"raw": hits.get("headshot_percentage", 0), "count": len(shots)}
+    hits["trait_components"]["utility"] = {"raw": hits.get("utility_damage_sum", 0), "count": len(shots)}
+    flashes["trait_components"]["utility"] = {"raw": flashes.get("flashbang_success_rate", 0), "count": 1}
+    movement["trait_components"]["positioning"] = {"raw": movement.get("rifle_moving_percentage", 0), "count": len(shots)}
+
+    # Score eligible teammates through the same canonical raw-score path.
+    selected_record = next(record for record in records if record["name"] == player_name)
+    comparison_scores = [
+        _score_relative_player(
+            demo,
+            selected_record,
+            player_id=player_id,
+            shots=shots,
+            hit_data=hits,
+            movement=movement,
+            flashes=flashes,
+            utility_deaths=utility_deaths,
+        )
+    ]
+    for teammate in teammates:
+        comparison_scores.append(_score_relative_player(demo, teammate))
+
+    # Generate archetype results using the new normalized scoring logic
+    archetype_analysis = _archetype_inputs(
+        hits, aim, flashes, movement, utility_deaths, player_stats,
+        player_name=player_name,
+        match_context=records + teammates,
+        comparison_scores=comparison_scores,
     )
 
     _emit_progress(0.82, "Preparing report")
@@ -178,8 +321,9 @@ def main() -> None:
         aim=aim,
         flashes=flashes,
         utility_deaths=utility_deaths,
-        archetype_analysis=archetype,
+        archetype_analysis=archetype_analysis,
     )
+
     versions = REPORT_GENERATORS if args.report_version == "all" else (args.report_version,)
     outputs = []
     for version in versions:
@@ -196,7 +340,6 @@ def main() -> None:
         print(report_text)
         print(f"\nReport saved to: {text_path}")
         print(f"HTML report saved to: {html_path}")
-
 
 if __name__ == "__main__":
     main()
