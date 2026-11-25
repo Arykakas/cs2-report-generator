@@ -5,31 +5,32 @@ from html import escape
 import polars as pl
 
 from .constants import RIFLE_WEAPONS, WEAPON_LABELS
+from .localization import translate
 from .rendering.charts import render_velocity_chart
 from .rendering.html import render_diagnosis_cards
-def get_qualitative_label(value, label_type: str) -> str:
+
+
+def get_qualitative_label(value, label_type: str, locale: str = "en") -> str:
     """Returns a qualitative description for a given metric."""
+    band = "steady"
     if label_type == "kd":
-        if value < 1.0: return "Struggling to impact"
-        if value <= 1.5: return "Steady contribution"
-        return "High impact"
-    if label_type == "adr":
-        if value < 60: return "Minimal damage output"
-        if value <= 80: return "Consistent pressure"
-        return "Primary threat"
-    if label_type == "kast":
-        if value < 60: return "Inconsistent engagement"
-        if value <= 75: return "Reliable participation"
-        return "Highly active"
-    if label_type == "hs":
-        if value < 20: return "Focus on body shots"
-        if value <= 30: return "Solid accuracy"
-        return "Elite precision"
-    if label_type == "accuracy":
-        if value < 15: return "Poor shot selection"
-        if value <= 30: return "Controlled firing"
-        return "Disciplined execution"
-    return ""
+        metric = "kd"
+        band = "low" if value < 1.0 else "high" if value > 1.5 else "steady"
+    elif label_type == "adr":
+        metric = "adr"
+        band = "low" if value < 60 else "high" if value > 80 else "steady"
+    elif label_type == "kast":
+        metric = "kast"
+        band = "low" if value < 60 else "high" if value > 75 else "steady"
+    elif label_type == "hs":
+        metric = "headshot"
+        band = "low" if value < 20 else "high" if value > 30 else "steady"
+    elif label_type == "accuracy":
+        metric = "accuracy"
+        band = "low" if value < 15 else "high" if value > 30 else "steady"
+    else:
+        return ""
+    return translate(locale, f"quality.{metric}.{band}")
 
 
 
@@ -47,56 +48,65 @@ def headshot_percentage(hit_data: dict) -> float:
     return heads / total * 100 if total else 0.0
 
 
-def _playstyle_messages(movement: dict, aim: dict) -> list[tuple]:
+def _flash_result_key(result: str) -> str:
+    return {
+        "blinded no one": "no_one",
+        "teammates only": "teammates_only",
+        "enemy blinded": "enemy",
+        "self-blind only": "self_only",
+    }.get(result, "no_one")
+
+
+def _playstyle_messages(movement: dict, aim: dict, locale: str) -> list[tuple]:
     messages = []
     if movement["rifle_total"] >= 5 and movement["rifle_moving_percentage"] > 15:
         messages.append((
             "warning-red",
-            f"You fired {movement['rifle_moving_percentage']:.1f}% of your rifle shots while moving. Rifles are inaccurate when moving—make sure you stop completely before shooting.",
+            translate(locale, "diagnosis.rifle_moving", percentage=movement["rifle_moving_percentage"]),
         ))
     if movement["sniper_total"] >= 5 and movement["sniper_moving_percentage"] > 10:
         messages.append((
             "warning-red",
-            f"You fired {movement['sniper_moving_percentage']:.1f}% of your sniper shots while moving. Make sure you're fully stopped before firing.",
+            translate(locale, "diagnosis.sniper_moving", percentage=movement["sniper_moving_percentage"]),
         ))
     if movement["sniper_total"] >= 5 and movement["awp_unscoped_shots"] > 1:
         messages.append((
             "warning-yellow",
-            f"You fired {movement['awp_unscoped_shots']} AWP shots without scoping. Make sure you're scoped before shooting.",
+            translate(locale, "diagnosis.awp_unscoped", count=movement["awp_unscoped_shots"]),
         ))
     if movement["smg_total"] >= 5 and movement["smg_moving_percentage"] < 30:
         messages.append((
             "warning-yellow",
-            f"You only moved during {movement['smg_moving_percentage']:.1f}% of your SMG shots. Use your speed to make yourself a harder target.",
+            translate(locale, "diagnosis.submachine_gun_low_moving", percentage=movement["smg_moving_percentage"]),
             "weapon-visuals",
         ))
     elif movement["smg_total"] >= 5 and movement["smg_moving_percentage"] > 80:
         messages.append((
             "note-gentle",
-            "You're running and gunning almost every SMG fight. Close the distance before taking long-range fights.",
+            translate(locale, "diagnosis.submachine_gun_high_moving"),
             "weapon-visuals",
         ))
     distance = aim["average_fiveseven_tec9_distance"]
     if movement["pistol_total"] >= 5 and distance is not None and distance > 800:
         messages.append((
             "warning-orange",
-            f"You took {aim['fiveseven_tec9_long_kills']} long-range kills with the Five-SeveN/Tec-9. Try to play closer to cover.",
+            translate(locale, "diagnosis.pistol_long_range", count=aim["fiveseven_tec9_long_kills"]),
         ))
     if movement["pistol_total"] >= 5 and movement["deagle_usp_moving_percentage"] > 20:
         messages.append((
             "warning-yellow",
-            f"You fired {movement['deagle_usp_moving_percentage']:.1f}% of your Deagle/USP shots while moving. Try to be stationary when you shoot.",
+            translate(locale, "diagnosis.deagle_usp_moving", percentage=movement["deagle_usp_moving_percentage"]),
         ))
     return messages
 
 
-def _diagnosis_messages(target_shots, hit_data: dict, movement: dict, flashes: dict) -> list[tuple]:
+def _diagnosis_messages(target_shots, hit_data: dict, movement: dict, flashes: dict, locale: str) -> list[tuple]:
     messages = []
     flash_harms_team = flashes["flash_teammate_or_self_count"]
     if flash_harms_team:
         messages.append((
             "warning-red",
-            f"You threw {flashes['flash_count']} flashes this match, {flash_harms_team} of which caused teammate or self-blindness. Check the timing and lineups of your flashes—they may be affecting teammates.",
+            translate(locale, "diagnosis.flash_team_harm", throws=flashes["flash_count"], harmful=flash_harms_team),
             "flashbang-table",
         ))
 
@@ -115,7 +125,7 @@ def _diagnosis_messages(target_shots, hit_data: dict, movement: dict, flashes: d
             label = WEAPON_LABELS.get(weapon, weapon)
             messages.append((
                 "warning-yellow",
-                f"Your {label} hit the chest or stomach on {body_rate:.1f}% of recorded hits. Start your spray at head level and check the weapon visual below.",
+                translate(locale, "diagnosis.rifle_body_hits", weapon=label, percentage=body_rate),
                 "weapon-visuals",
             ))
     return messages
@@ -124,7 +134,7 @@ def _diagnosis_messages(target_shots, hit_data: dict, movement: dict, flashes: d
 def build_report_context(
     *, demo_path, demo, player_name: str, player_stats: dict, target_shots,
     hit_analysis: dict, movement: dict, aim: dict, flashes: dict,
-    utility_deaths, archetype_analysis: dict,
+    utility_deaths, archetype_analysis: dict, locale: str = "en",
 ) -> dict:
     """Prepare shared presentation values used by both report versions."""
     hit_data = hit_analysis["hit_model_data"]
@@ -137,17 +147,17 @@ def build_report_context(
     accuracy_display = f"{number(player_stats.get('accuracy')):.1f}%"
 
     stats_cards = "".join((
-        f'<div class="stat-card"><span class="stat-label">K/D</span><strong>{kd_display}</strong> <small>({get_qualitative_label(kills / deaths if deaths else kills, "kd")})</small></div>',
-        f'<div class="stat-card"><span class="stat-label">ADR</span><strong>{adr_display}</strong> <small>({get_qualitative_label(number(player_stats.get("adr")), "adr")})</small></div>',
-        f'<div class="stat-card"><span class="stat-label">KAST</span><strong>{kast_display}</strong> <small>({get_qualitative_label(number(player_stats.get("kast")), "kast")})</small></div>',
-        f'<div class="stat-card"><span class="stat-label">HS%</span><strong>{hs_display}</strong> <small>({get_qualitative_label(number(player_stats.get("headshot_pct")), "hs")})</small></div>',
-        f'<div class="stat-card"><span class="stat-label">Accuracy</span><strong>{accuracy_display}</strong> <small>({get_qualitative_label(number(player_stats.get("accuracy")), "accuracy")})</small></div>',
+        f'<div class="stat-card"><span class="stat-label">{escape(translate(locale, "stat.kd"))}</span><strong>{kd_display}</strong> <small>({escape(get_qualitative_label(kills / deaths if deaths else kills, "kd", locale))})</small></div>',
+        f'<div class="stat-card"><span class="stat-label">{escape(translate(locale, "stat.adr"))}</span><strong>{adr_display}</strong> <small>({escape(get_qualitative_label(number(player_stats.get("adr")), "adr", locale))})</small></div>',
+        f'<div class="stat-card"><span class="stat-label">{escape(translate(locale, "stat.kast"))}</span><strong>{kast_display}</strong> <small>({escape(get_qualitative_label(number(player_stats.get("kast")), "kast", locale))})</small></div>',
+        f'<div class="stat-card"><span class="stat-label">{escape(translate(locale, "stat.headshot"))}</span><strong>{hs_display}</strong> <small>({escape(get_qualitative_label(number(player_stats.get("headshot_pct")), "hs", locale))})</small></div>',
+        f'<div class="stat-card"><span class="stat-label">{escape(translate(locale, "stat.accuracy"))}</span><strong>{accuracy_display}</strong> <small>({escape(get_qualitative_label(number(player_stats.get("accuracy")), "accuracy", locale))})</small></div>',
     ))
     categories = (
-        ("Rifle", "rifle_total", "rifle_moving_count", "rifle_moving_percentage"),
-        ("Sniper (AWP/SSG08)", "sniper_total", "sniper_moving_count", "sniper_moving_percentage"),
-        ("SMG", "smg_total", "smg_moving_count", "smg_moving_percentage"),
-        ("Pistol", "pistol_total", "pistol_moving_count", "pistol_moving_percentage"),
+        (translate(locale, "category.rifle"), "rifle_total", "rifle_moving_count", "rifle_moving_percentage"),
+        (translate(locale, "category.sniper"), "sniper_total", "sniper_moving_count", "sniper_moving_percentage"),
+        (translate(locale, "category.submachine_gun"), "smg_total", "smg_moving_count", "smg_moving_percentage"),
+        (translate(locale, "category.pistol"), "pistol_total", "pistol_moving_count", "pistol_moving_percentage"),
     )
     playstyle_rows = "".join(
         f"<tr><td>{label}</td><td>{movement[total]}</td><td>{movement[moving]}</td><td>{movement[rate]:.1f}%</td></tr>"
@@ -155,35 +165,39 @@ def build_report_context(
     )
     weapon_rows = "".join(
         f'<tr><td>{escape(WEAPON_LABELS.get(str(row["weapon"]).removeprefix("weapon_"), str(row["weapon"])))}</td>'
-        f'<td>{row["average"]:.2f} degrees</td><td>{row["count"]}</td></tr>'
+        f'<td>{row["average"]:.2f} {escape(translate(locale, "unit.degrees"))}</td><td>{row["count"]}</td></tr>'
         for row in aim["weapon_deviation_summary"]
     )
-    flash_rows = "".join(
-        f'<tr><td>{row["enemies"]}</td><td>{row["teammates"]}</td>'
-        f'<td>{row["self"]}</td><td>{escape(row["result"])}</td></tr>'
-        for row in flashes["flash_details"]
-    )
+    flash_row_html = []
+    for row in flashes["flash_details"]:
+        result = translate(locale, f"flash.result.{_flash_result_key(row['result'])}")
+        flash_row_html.append(
+            f'<tr><td>{row["enemies"]}</td><td>{row["teammates"]}</td>'
+            f'<td>{row["self"]}</td><td>{escape(result)}</td></tr>'
+        )
+    flash_rows = "".join(flash_row_html)
     suspected_count = len(aim["shots_before_crosshair_settles"])
     suspected_sentence = (
-        f"You fired before your crosshair settled on the enemy {suspected_count} "
-        f"{'time' if suspected_count == 1 else 'times'}. Try to stop your mouse before clicking."
+        translate(locale, "text.crosshair_settling_one")
+        if suspected_count == 1
+        else translate(locale, "text.crosshair_settling_many", count=suspected_count)
         if suspected_count else ""
     )
     suspected_section = (
-        f'<section><h2>Suspected firing before crosshair settles</h2><p>{escape(suspected_sentence)}</p></section>'
+        f'<section><h2>{escape(translate(locale, "report.v1.suspected_fire"))}</h2><p>{escape(suspected_sentence)}</p></section>'
         if suspected_sentence else ""
     )
 
-    messages = _diagnosis_messages(target_shots, hit_data, movement, flashes)
-    messages.extend(_playstyle_messages(movement, aim))
+    messages = _diagnosis_messages(target_shots, hit_data, movement, flashes, locale)
+    messages.extend(_playstyle_messages(movement, aim, locale))
     if not messages:
         messages.append((
             "hint-gray",
-            "This match's data doesn't show obvious habitual errors. Keep watching multiple matches to see if patterns emerge.",
+            translate(locale, "diagnosis.no_obvious_errors"),
         ))
     summary = [
-        f'{movement["rifle_moving_count"]} of {movement["rifle_total"]} rifle shots were fired while moving ({movement["rifle_moving_percentage"]:.1f}%).',
-        f'{flashes["flash_count"]} flashes thrown; {flashes["enemy_blinds"]} enemies blinded; {flashes["teammate_blinds"]} teammates blinded.',
+        translate(locale, "summary.rifle_moving", moving=movement["rifle_moving_count"], total=movement["rifle_total"], percentage=movement["rifle_moving_percentage"]),
+        translate(locale, "summary.flash", throws=flashes["flash_count"], enemies=flashes["enemy_blinds"], teammates=flashes["teammate_blinds"]),
     ]
     summary.extend(message[1] for message in messages)
     pistol_distance = aim["average_pistol_kill_distance"]
@@ -202,7 +216,7 @@ def build_report_context(
         "self_blinds": flashes["self_blinds"],
         "flashes_blinding_no_one": flashes["flashes_blinding_no_one"],
         "stats_cards": stats_cards,
-        "diagnosis_html": f'<div class="diagnosis-grid">{render_diagnosis_cards(messages)}</div>',
+        "diagnosis_html": f'<div class="diagnosis-grid">{render_diagnosis_cards(messages, locale)}</div>',
         "diagnosis_messages": messages,
         "summary_sentences": summary,
         "hit_model_html": hit_analysis["hit_model_html"],
@@ -212,7 +226,10 @@ def build_report_context(
         "suspected_fire_section_html": suspected_section,
         "suspected_fire_sentence": suspected_sentence,
         "chart_html": render_velocity_chart(
-            movement["velocity_75_100"], movement["velocity_100_150"], movement["velocity_over_150"]
+            movement["velocity_75_100"],
+            movement["velocity_100_150"],
+            movement["velocity_over_150"],
+            locale=locale,
         ),
         "average_deviation_html": f"{average_deviation:.2f}" if average_deviation is not None else "N/A",
         "average_kill_deviation": average_deviation,
@@ -224,6 +241,7 @@ def build_report_context(
         "movement": movement,
         "aim": aim,
         "archetype_analysis": archetype_analysis,
+        "locale": locale,
     }
 
 
@@ -232,38 +250,38 @@ def common_text_lines(context: dict) -> list[str]:
     movement = context["movement"]
     aim = context["aim"]
     flashes = context["flash_analysis"]
+    locale = context.get("locale", "en")
     average = aim["average_kill_deviation"]
     lines = [
-        "MATCH DETAILS",
-        f"Player: {context['target_player']}",
-        f"Demo: {context['demo_path'].name}",
-        f"Deaths while holding utility: {context['utility_deaths'].height}",
+        translate(locale, "text.match_details"),
+        f"{translate(locale, 'text.player')}: {context['target_player']}",
+        f"{translate(locale, 'text.demo')}: {context['demo_path'].name}",
+        f"{translate(locale, 'text.utility_deaths')} {context['utility_deaths'].height}",
         "",
-        "AIM DEVIATION ON KILLS",
-        f"Average deviation: {average:.2f} degrees (lower is better)." if average is not None else "Average deviation: unavailable.",
-        "By weapon (average deviation, sample count):",
+        translate(locale, "text.aim_deviation"),
+        translate(locale, "text.average_deviation", degrees=f"{average:.2f}") if average is not None else translate(locale, "text.average_deviation_unavailable"),
+        translate(locale, "text.by_weapon"),
     ]
     for row in aim["weapon_deviation_summary"]:
         label = WEAPON_LABELS.get(str(row["weapon"]).removeprefix("weapon_"), str(row["weapon"]))
-        lines.append(f"  {label}: {row['average']:.2f} degrees across {row['count']} kills")
+        lines.append(translate(locale, "text.weapon_deviation", weapon=label, average=f"{row['average']:.2f}", count=row["count"]))
     lines.extend((
-        "", "WEAPON MOVEMENT",
-        f'Rifles: {movement["rifle_moving_count"]}/{movement["rifle_total"]} moving ({movement["rifle_moving_percentage"]:.1f}%)',
-        f'SMGs: {movement["smg_moving_count"]}/{movement["smg_total"]} moving ({movement["smg_moving_percentage"]:.1f}%)',
-        f'Pistols: {movement["pistol_moving_count"]}/{movement["pistol_total"]} moving ({movement["pistol_moving_percentage"]:.1f}%)',
-        f'Snipers: {movement["sniper_moving_count"]}/{movement["sniper_total"]} moving ({movement["sniper_moving_percentage"]:.1f}%)',
+        "", translate(locale, "text.weapon_movement"),
+        translate(locale, "text.movement_line", category=translate(locale, "category.rifle"), moving=movement["rifle_moving_count"], total=movement["rifle_total"], percentage=movement["rifle_moving_percentage"]),
+        translate(locale, "text.movement_line", category=translate(locale, "category.submachine_gun"), moving=movement["smg_moving_count"], total=movement["smg_total"], percentage=movement["smg_moving_percentage"]),
+        translate(locale, "text.movement_line", category=translate(locale, "category.pistol"), moving=movement["pistol_moving_count"], total=movement["pistol_total"], percentage=movement["pistol_moving_percentage"]),
+        translate(locale, "text.movement_line", category=translate(locale, "category.sniper"), moving=movement["sniper_moving_count"], total=movement["sniper_total"], percentage=movement["sniper_moving_percentage"]),
     ))
     if context["suspected_fire_sentence"]:
         lines.append(context["suspected_fire_sentence"])
     lines.extend((
-        "", "FLASHBANGS", f'Thrown: {flashes["flash_count"]}',
-        f'Enemies blinded: {flashes["enemy_blinds"]}',
-        f'Teammates blinded: {flashes["teammate_blinds"]}',
-        f'Self-blinds: {flashes["self_blinds"]}',
+        "", translate(locale, "text.flashbangs"),
+        f'{translate(locale, "text.thrown")} {flashes["flash_count"]}',
+        f'{translate(locale, "text.enemies_blinded")} {flashes["enemy_blinds"]}',
+        f'{translate(locale, "text.teammates_blinded")} {flashes["teammate_blinds"]}',
+        f'{translate(locale, "text.self_blinds")} {flashes["self_blinds"]}',
     ))
     for index, row in enumerate(flashes["flash_details"], start=1):
-        lines.append(
-            f'  Flash {index}: {row["enemies"]} enemies, {row["teammates"]} teammates, '
-            f'{row["self"]} self-blinds — {row["result"]}'
-        )
+        result = translate(locale, f"flash.result.{_flash_result_key(row['result'])}")
+        lines.append(translate(locale, "text.flash_detail", index=index, enemies=row["enemies"], teammates=row["teammates"], self_blinds=row["self"], result=result))
     return lines

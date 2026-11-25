@@ -2,25 +2,39 @@
 
 from html import escape
 
+from ..localization import translate
+
 
 def render_html_report_v2(context: dict) -> str:
     """Render Report 2.0 without routing through the legacy report template."""
     player = escape(str(context["target_player"]))
     map_name = escape(str(context["map_name"]))
+    locale = context.get("locale", "en")
     archetype = context["archetype_analysis"]
     scores = archetype["scores"]
     score_labels = (
-        ("Aggression", "aggression", scores.get("aggression", 0), "#fb7185"),
-        ("Precision", "precision", scores.get("precision", 0), "#38bdf8"),
-        ("Utility", "utility", scores.get("utility", 0), "#34d399"),
-        ("Positioning", "positioning", scores.get("positioning", 0), "#a78bfa"),
+        (translate(locale, "trait.aggression"), "aggression", scores.get("aggression", 0), "#fb7185"),
+        (translate(locale, "trait.precision"), "precision", scores.get("precision", 0), "#38bdf8"),
+        (translate(locale, "trait.utility"), "utility", scores.get("utility", 0), "#34d399"),
+        (translate(locale, "trait.positioning"), "positioning", scores.get("positioning", 0), "#a78bfa"),
     )
     tied_distinctions = archetype.get("tied_distinctions", [])
     distinction_html = ""
     if tied_distinctions:
+        trait_keys = {
+            "Aggression": "trait.aggression",
+            "Precision": "trait.precision",
+            "Utility": "trait.utility",
+            "Positioning": "trait.positioning",
+        }
+        translated_traits = " + ".join(
+            translate(locale, trait_keys.get(trait, trait))
+            for trait in tied_distinctions
+        )
         distinction_html = (
-            '<div class="focus-row"><span class="focus-chip">Tied distinctions: '
-            f'<strong>{escape(" + ".join(tied_distinctions))}</strong></span></div>'
+            '<div class="focus-row"><span class="focus-chip">'
+            f'{escape(translate(locale, "report.v2.tied_distinctions", traits=translated_traits))}'
+            '</span></div>'
         )
 
     score_cards = ""
@@ -35,11 +49,11 @@ def render_html_report_v2(context: dict) -> str:
         )
 
     return f"""<!doctype html>
-<html lang="en">
+<html lang="{locale}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>CS2 Report 2.0 — {player}</title>
+  <title>{escape(translate(locale, "report.v2.title"))} — {player}</title>
   <style>
     :root {{ color-scheme: normal; font-family: Inter, "Segoe UI", sans-serif; color: #eef2ff; background: transparent; }}
     * {{ box-sizing: border-box; }}
@@ -114,62 +128,62 @@ def render_html_report_v2(context: dict) -> str:
 <body>
   <main>
     <header>
-      <div class="eyebrow">Report 2.0 / Coaching summary</div>
-      <h1>CS2 Match Review</h1>
-      <div class="meta">Player <strong>{player}</strong> &nbsp;·&nbsp; Map <strong>{map_name}</strong></div>
+      <div class="eyebrow">{escape(translate(locale, "report.v2.eyebrow"))}</div>
+      <h1>{escape(translate(locale, "report.v2.title"))}</h1>
+      <div class="meta">{escape(translate(locale, "report.v2.player"))} <strong>{player}</strong> &nbsp;·&nbsp; {escape(translate(locale, "report.v2.map"))} <strong>{map_name}</strong></div>
     </header>
     <section class="archetype">
-      <div class="eyebrow">Your player archetype</div>
+      <div class="eyebrow">{escape(translate(locale, "report.v2.archetype_eyebrow"))}</div>
       <h2 class="archetype-name">{escape(str(archetype["archetype"]))}</h2>
       <p class="archetype-summary">{escape(str(archetype["summary"]))}</p>
       <div class="focus-row">
-        <span class="focus-chip">Primary strength: <strong>{escape(str(archetype["primary_trait"]))}</strong></span>
-        <span class="focus-chip">Next focus: <strong>{escape(str(archetype.get("opportunity", "N/A")))}</strong></span>
+        <span class="focus-chip">{escape(translate(locale, "report.v2.primary_strength"))} <strong>{escape(str(archetype["primary_trait"]))}</strong></span>
+        <span class="focus-chip">{escape(translate(locale, "report.v2.next_focus"))} <strong>{escape(str(archetype.get("opportunity", "N/A")))}</strong></span>
       </div>
       {distinction_html}
     </section>
     <section>
-      <h2>Trait scores</h2>
-      <p class="muted">Scores compare eligible teammates in this match. Enemy metrics are context only and do not enter ranking.</p>
+      <h2>{escape(translate(locale, "report.v2.trait_scores"))}</h2>
+      <p class="muted">{escape(translate(locale, "report.v2.comparison"))}</p>
       <div class="scores">{score_cards}</div>
-      <p class="muted">Positioning score reflects rifle movement discipline and utility deaths per round.</p>
+      <p class="muted">{escape(translate(locale, "report.v2.positioning_note"))}</p>
     </section>
     <section>
-      <h2>Performance snapshot</h2>
+      <h2>{escape(translate(locale, "report.v2.performance"))}</h2>
       <div class="stats">{context["stats_cards"]}</div>
     </section>
     <section>
-      <h2>Match diagnosis</h2>
+      <h2>{escape(translate(locale, "report.v2.diagnosis"))}</h2>
       {context["diagnosis_html"]}
     </section>
     <section>
-      <h2>Weapon and hit review</h2>
+      <h2>{escape(translate(locale, "report.v2.weapon_review"))}</h2>
       <div class="columns">
-        <div class="panel"><h3>Where your shots landed</h3>{context["hit_model_html"]}</div>
+        <div class="panel"><h3>{escape(translate(locale, "report.v2.where_shots"))}</h3>{context["hit_model_html"]}</div>
         <div class="panel">
-          <h3>Weapon playstyle</h3>
-          <table><thead><tr><th>Category</th><th>Shots</th><th>Moving</th><th>Rate</th></tr></thead><tbody>{context["weapon_playstyle_rows"]}</tbody></table>
-          <h3 style="margin-top:24px">Pistol range</h3>
-          <p class="muted">Average kill distance: {context["pistol_distance_display"]}</p>
-          <p class="muted">Close: {context["pistol_distance_buckets"]["close"]} · Medium: {context["pistol_distance_buckets"]["medium"]} · Long: {context["pistol_distance_buckets"]["long"]}</p>
+          <h3>{escape(translate(locale, "report.v2.weapon_playstyle"))}</h3>
+          <table><thead><tr><th>{escape(translate(locale, "report.v1.category"))}</th><th>{escape(translate(locale, "report.v1.total_shots"))}</th><th>{escape(translate(locale, "report.v1.moving_shots"))}</th><th>{escape(translate(locale, "report.v1.moving_percent"))}</th></tr></thead><tbody>{context["weapon_playstyle_rows"]}</tbody></table>
+          <h3 style="margin-top:24px">{escape(translate(locale, "report.v2.pistol_range"))}</h3>
+          <p class="muted">{escape(translate(locale, "report.v2.average_kill_distance", distance=context["pistol_distance_display"]))}</p>
+          <p class="muted">{escape(translate(locale, "report.v2.distance_buckets", **context["pistol_distance_buckets"]))}</p>
         </div>
       </div>
     </section>
     <details>
-      <summary>View detailed data</summary>
+      <summary>{escape(translate(locale, "report.v2.details"))}</summary>
       <div class="details-content">
         <section><div class="chart">{context["chart_html"]}</div></section>
         <section>
-          <h2>Aim deviation on kills</h2>
-          <p>Average deviation: {context["average_deviation_html"]} degrees (lower is better).</p>
-          <h3>By weapon</h3>
-          <table><thead><tr><th>Weapon</th><th>Average deviation</th><th>Sample count</th></tr></thead><tbody>{context["weapon_deviation_rows"]}</tbody></table>
+          <h2>{escape(translate(locale, "report.v2.aim_deviation"))}</h2>
+          <p>{escape(translate(locale, "report.v2.average_deviation", deviation=context["average_deviation_html"]))}</p>
+          <h3>{escape(translate(locale, "report.v2.by_weapon"))}</h3>
+          <table><thead><tr><th>{escape(translate(locale, "report.v2.weapon"))}</th><th>{escape(translate(locale, "report.v1.average_deviation"))}</th><th>{escape(translate(locale, "report.v2.sample_count"))}</th></tr></thead><tbody>{context["weapon_deviation_rows"]}</tbody></table>
         </section>
         {context["suspected_fire_section_html"]}
         <section id="flashbang-table">
-          <h2>Flashbang results</h2>
-          <p>{context["flash_count"]} thrown · {context["enemy_blinds"]} enemies blinded · {context["teammate_blinds"]} teammates blinded · {context["self_blinds"]} self-blinds.</p>
-          <table><thead><tr><th>Enemies</th><th>Teammates</th><th>Self</th><th>Outcome</th></tr></thead><tbody>{context["flash_detail_rows"]}</tbody></table>
+          <h2>{escape(translate(locale, "report.v2.flash_results"))}</h2>
+          <p>{escape(translate(locale, "report.v2.flash_overview", throws=context["flash_count"], enemies=context["enemy_blinds"], teammates=context["teammate_blinds"], self_blinds=context["self_blinds"]))}</p>
+          <table><thead><tr><th>{escape(translate(locale, "report.v2.flash_enemies"))}</th><th>{escape(translate(locale, "report.v2.flash_teammates"))}</th><th>{escape(translate(locale, "report.v2.flash_self"))}</th><th>{escape(translate(locale, "report.v2.flash_outcome"))}</th></tr></thead><tbody>{context["flash_detail_rows"]}</tbody></table>
         </section>
       </div>
     </details>

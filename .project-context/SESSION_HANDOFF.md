@@ -1,9 +1,9 @@
 # Session Handoff
 
 ## Current Activity
-- **Last Verified Activity**: Made the Report 2.0 root/body transparent and disabled the iframe dark color-scheme canvas fallback so the app backdrop shows through.
-- **Current Task**: Report appearance refinement - completed.
-- **Subtask**: Regenerated the report in the live app and visually confirmed the app background shows through around the report panels.
+- **Last Verified Activity**: Completed localization Task 2 inventory across the Streamlit UI, progress/errors, both report versions, diagnosis, charts, hit-map captions, and coaching narratives.
+- **Current Task**: Localization Task 3 - add catalogs and translation helper.
+- **Subtask**: Build English, Danish, and Russian JSON catalogs with fallback and completeness/interpolation tests.
 
 ## Progress Summary
 - [x] Audit available demo data (Task 1)
@@ -16,6 +16,9 @@
 - [x] Complete focused and real-demo verification (Task 8 - completed for the available demo)
 
 ## Recent Changes
+- `PROJECT_ROADMAP.md`: Added an eight-task cross-cutting localization plan; finalized the English/Danish/Russian scope and full-term glossary policy.
+- `PROJECT_ROADMAP.md`: Marked the user-facing string inventory complete.
+- `.project-context/PROJECT_STATE.md`: Recorded Task 1 terminology policy completion; native-speaker review remains in Task 8.
 - `cs2_report/rendering/html_v2.py`: Set root/body backgrounds transparent and `color-scheme: normal` so the iframe does not paint an opaque dark canvas.
 - `run_streamlit_app.bat`: Finds the first Python executable that imports Streamlit, falls back to `py -3`, and prints an installation hint if none is available.
 - `app.py`: Replaced preview/download popovers with an inline report view, a compact 2.0/1.0 segmented selector, and a single download button after the report.
@@ -32,7 +35,7 @@
 - `tests/test_archetype_ranking.py`: Added five unit cases for ties, all-equal values, low/high ordering, single-player ranking, and missing values.
 
 ## Verification & Testing
-- **Tests Executed**:
+- **Tests Executed**: None; this was a documentation-only planning update.
   - `C:\Program Files\Python312\python.exe -m unittest discover -s tests -v`
   - `python -m compileall -q cs2_report/rendering/html_v2.py`
   - Rendered minimal Report 2.0 HTML and asserted solid background/no radial gradient.
@@ -75,7 +78,7 @@
 - **Side awareness**: Explicit CT/T half-aware teammate comparison remains unresolved.
 
 ## Next Steps
-- **Immediate Action**: App is currently running at `http://127.0.0.1:8501`; stop it when the user is done reviewing.
+- **Immediate Action**: Confirm whether the proposed Spanish (`es-419`) and German (`de-DE`) locales are the two additional languages, then inventory strings before implementation.
 - **Files to Inspect First**:
     1. `cs2_report/pipeline.py`
     2. `cs2_report/analysis/archetype.py`

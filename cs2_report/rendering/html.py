@@ -2,22 +2,24 @@
 
 from html import escape
 
-_DIAGNOSIS_LABELS = {
-    "warning-red": "Priority alert",
-    "warning-yellow": "Review",
-    "warning-orange": "Range check",
-    "note-gentle": "Playstyle note",
-    "hint-gray": "Match signal",
+from ..localization import translate
+
+_DIAGNOSIS_LABEL_KEYS = {
+  "warning-red": "diagnosis.label.priority",
+  "warning-yellow": "diagnosis.label.review",
+  "warning-orange": "diagnosis.label.range",
+  "note-gentle": "diagnosis.label.playstyle",
+  "hint-gray": "diagnosis.label.signal",
 }
 
 
-def render_diagnosis_cards(messages: list[tuple]) -> str:
+def render_diagnosis_cards(messages: list[tuple], locale: str = "en") -> str:
     """Render diagnosis messages as consistent, severity-coded cards."""
     cards = []
     for index, item in enumerate(messages, start=1):
         kind, message = item[:2]
         anchor = item[2] if len(item) > 2 else None
-        label = _DIAGNOSIS_LABELS.get(kind, "Match note")
+        label = translate(locale, _DIAGNOSIS_LABEL_KEYS.get(kind, "diagnosis.label.note"))
         tag = "a" if anchor else "article"
         link_attrs = f' href="#{escape(anchor, quote=True)}"' if anchor else ""
         link_class = " diagnosis-card-link" if anchor else ""
@@ -25,10 +27,10 @@ def render_diagnosis_cards(messages: list[tuple]) -> str:
             f'<{tag} class="diagnosis-card{link_class} {kind}"{link_attrs}>'
             f'<div class="diagnosis-card-head">'
             f'<span class="diagnosis-card-label">{escape(label)}</span>'
-            f'<span class="diagnosis-card-index">INTEL / {index:02d}</span>'
+            f'<span class="diagnosis-card-index">{escape(translate(locale, "diagnosis.card_index", index=index))}</span>'
             f'</div><div class="diagnosis-card-rule"></div>'
             f'<p class="diagnosis-copy">{escape(message)}</p>'
-            f'<div class="diagnosis-card-footer">MATCH INTELLIGENCE</div>'
+            f'<div class="diagnosis-card-footer">{escape(translate(locale, "diagnosis.intelligence"))}</div>'
             f'</{tag}>'
         )
     return "".join(cards)
@@ -37,11 +39,11 @@ def render_diagnosis_cards(messages: list[tuple]) -> str:
 _TEMPLATE = r'''
 
 f"""<!doctype html>
-<html lang="en">
+<html lang="{locale}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>CS2 Match Report — {escape(target_player)}</title>
+  <title>{escape(translate(locale, "report.title"))} — {escape(target_player)}</title>
   <style>
     :root {{ color-scheme: dark; font-family: Inter, Rajdhani, "Segoe UI", sans-serif; background: #0f172a; color: #f8fafc; }}
     * {{ box-sizing: border-box; }}
@@ -114,53 +116,53 @@ f"""<!doctype html>
 <body>
   <main>
     <header>
-      <p class="eyebrow">Tactical performance review</p>
-      <h1>CS2 Match Report</h1>
-      <p class="header-meta">Player <strong>{escape(target_player)}</strong> &nbsp; · &nbsp; Map <strong>{escape(str(map_name))}</strong></p>
+      <p class="eyebrow">{escape(translate(locale, "report.v1.eyebrow"))}</p>
+      <h1>{escape(translate(locale, "report.title"))}</h1>
+      <p class="header-meta">{escape(translate(locale, "report.v2.player"))} <strong>{escape(target_player)}</strong> &nbsp; · &nbsp; {escape(translate(locale, "report.v2.map"))} <strong>{escape(str(map_name))}</strong></p>
     </header>
     <section>
-      <h2>Match Stats</h2>
+      <h2>{escape(translate(locale, "report.v1.match_stats"))}</h2>
       <div class="stats">{stats_cards}</div>
     </section>
     <section>
-      <h2>Match Diagnosis</h2>
-      <div style="display: flex; flex-direction: column; gap: 12px; width: 100%;">{(diagnosis_html if diagnosis_html else '<p class="subtitle">No playstyle threshold was triggered for this match.</p>')}</div>
+      <h2>{escape(translate(locale, "report.v1.match_diagnosis"))}</h2>
+      <div style="display: flex; flex-direction: column; gap: 12px; width: 100%;">{(diagnosis_html if diagnosis_html else f'<p class="subtitle">{escape(translate(locale, "diagnosis.no_obvious_errors"))}</p>')}</div>
     </section>
     <section id="weapon-visuals">
-      <h2>Weapon Visuals</h2>
+      <h2>{escape(translate(locale, "report.v1.weapon_visuals"))}</h2>
       <div class="visual-grid">
-        <div class="visual-panel"><h3>Where are you actually hitting?</h3>{hit_model_html}</div>
+        <div class="visual-panel"><h3>{escape(translate(locale, "report.v1.where_hits"))}</h3>{hit_model_html}</div>
         <div class="visual-panel">
-          <h3>Weapon Playstyle Breakdown</h3>
-          <div class="table-wrap"><table><thead><tr><th>Category</th><th>Total shots</th><th>Moving shots</th><th>Moving %</th></tr></thead><tbody>{weapon_playstyle_rows}</tbody></table></div>
-          <h3>Pistol Engagements</h3>
-          <p class="subtitle">Average kill distance: {(f'{average_pistol_kill_distance:.1f} units' if average_pistol_kill_distance is not None else 'N/A')}.</p>
-          <p class="subtitle">Distance buckets — close (&lt;500): {pistol_distance_buckets['close']}; medium (500–1000): {pistol_distance_buckets['medium']}; long (&gt;1000): {pistol_distance_buckets['long']}.</p>
-          <p class="subtitle">Five-SeveN/Tec-9 average: {(f'{average_fiveseven_tec9_distance:.1f} units' if average_fiveseven_tec9_distance is not None else 'N/A')}; long-range kills: {fiveseven_tec9_long_kills}.</p>
+          <h3>{escape(translate(locale, "report.v1.weapon_playstyle"))}</h3>
+          <div class="table-wrap"><table><thead><tr><th>{escape(translate(locale, "report.v1.category"))}</th><th>{escape(translate(locale, "report.v1.total_shots"))}</th><th>{escape(translate(locale, "report.v1.moving_shots"))}</th><th>{escape(translate(locale, "report.v1.moving_percent"))}</th></tr></thead><tbody>{weapon_playstyle_rows}</tbody></table></div>
+          <h3>{escape(translate(locale, "report.v1.pistol_engagements"))}</h3>
+          <p class="subtitle">{escape(translate(locale, "report.v1.average_kill_distance", distance=(f'{average_pistol_kill_distance:.1f} {translate(locale, "unit.game_units")}' if average_pistol_kill_distance is not None else 'N/A')))}</p>
+          <p class="subtitle">{escape(translate(locale, "report.v1.distance_buckets", close=pistol_distance_buckets['close'], medium=pistol_distance_buckets['medium'], long=pistol_distance_buckets['long']))}</p>
+          <p class="subtitle">{escape(translate(locale, "report.v1.fiveseven_average", distance=(f'{average_fiveseven_tec9_distance:.1f} {translate(locale, "unit.game_units")}' if average_fiveseven_tec9_distance is not None else 'N/A'), kills=fiveseven_tec9_long_kills))}</p>
         </div>
       </div>
     </section>
     <details>
-      <summary>View detailed data</summary>
+      <summary>{escape(translate(locale, "report.v1.details"))}</summary>
       <div class="details-content">
     <section>
       <div class="chart">{chart_html}</div>
     </section>
     <section>
-      <h2>Aim deviation on kills</h2>
-      <p>Average deviation: <strong>{average_deviation_html}</strong> degrees (lower is better).</p>
-      <h3>By weapon</h3>
+      <h2>{escape(translate(locale, "report.v1.aim_deviation"))}</h2>
+      <p>{escape(translate(locale, "report.v2.average_deviation", deviation=average_deviation_html))}</p>
+      <h3>{escape(translate(locale, "report.v1.by_weapon"))}</h3>
       <div class="table-wrap"><table>
-        <thead><tr><th>Weapon</th><th>Average deviation</th><th>Sample count</th></tr></thead>
+        <thead><tr><th>{escape(translate(locale, "report.v1.weapon"))}</th><th>{escape(translate(locale, "report.v1.average_deviation"))}</th><th>{escape(translate(locale, "report.v1.sample_count"))}</th></tr></thead>
         <tbody>{weapon_deviation_rows}</tbody>
       </table></div>
     </section>
     {suspected_fire_section_html}
     <section id="flashbang-table">
-      <h2>Flashbang summary</h2>
-      <p>{flash_count} flashbangs thrown; {enemy_blinds} enemy blinds; {teammate_blinds} teammate blinds; {self_blinds} self-blinds; {flashes_blinding_no_one} flashes blinded no one.</p>
+      <h2>{escape(translate(locale, "report.v1.flash_summary"))}</h2>
+      <p>{escape(translate(locale, "report.v1.flash_overview", throws=flash_count, enemies=enemy_blinds, teammates=teammate_blinds, self_blinds=self_blinds, no_one=flashes_blinding_no_one))}</p>
       <div class="table-wrap"><table>
-        <thead><tr><th>Enemies blinded</th><th>Teammates blinded</th><th>Self-blinds</th><th>Result</th></tr></thead>
+        <thead><tr><th>{escape(translate(locale, "report.v2.flash_enemies"))}</th><th>{escape(translate(locale, "report.v2.flash_teammates"))}</th><th>{escape(translate(locale, "report.v2.flash_self"))}</th><th>{escape(translate(locale, "report.v2.flash_outcome"))}</th></tr></thead>
         <tbody>{flash_detail_rows}</tbody>
       </table></div>
     </section>
@@ -187,6 +189,10 @@ f"""<!doctype html>
 
 def render_html_report(context: dict) -> str:
     """Render the report using the prepared analysis context."""
-    return eval(_TEMPLATE, {"escape": escape}, context)
+    return eval(
+        _TEMPLATE,
+        {"escape": escape, "translate": translate, "locale": context.get("locale", "en")},
+        context,
+    )
 
 

@@ -18,6 +18,7 @@ from .analysis.hits import analyze_hits
 from .analysis.utility_deaths import analyze_utility_deaths
 from .analysis.weapons import analyze_weapon_movement
 from .demo import load_demo, resolve_player
+from .localization import DEFAULT_LOCALE, SUPPORTED_LOCALES, report_output_paths, translate
 from .report_common import build_report_context, headshot_percentage, number
 from .report_v1 import generate as generate_report_v1
 from .report_v2 import generate as generate_report_v2
@@ -35,6 +36,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--report-version", choices=(*REPORT_GENERATORS, "all"), default="1.0",
         help="Report template version, or 'all' to generate both (default: 1.0)",
+    )
+    parser.add_argument(
+        "--locale", choices=SUPPORTED_LOCALES, default=DEFAULT_LOCALE,
+        help="Report language (default: en)",
     )
     return parser.parse_args()
 
@@ -168,7 +173,7 @@ def _score_relative_player(demo, record: dict, player_id: int = None, shots=None
     }
 
 
-def _archetype_inputs(hit_data: dict, aim: dict, flashes: dict, movement: dict, deaths, stats: dict, player_name: str = None, match_context: list[dict] = None, comparison_scores: list[dict] = None) -> dict:
+def _archetype_inputs(hit_data: dict, aim: dict, flashes: dict, movement: dict, deaths, stats: dict, player_name: str = None, match_context: list[dict] = None, comparison_scores: list[dict] = None, locale: str = DEFAULT_LOCALE) -> dict:
     """Build raw and tie-aware relative trait scores for the selected player."""
     utility_death_rate = (
         max(0, int(deaths.height))
@@ -236,7 +241,7 @@ def _archetype_inputs(hit_data: dict, aim: dict, flashes: dict, movement: dict, 
         else {}
     )
 
-    archetype_result = build_archetype_result(ranked_scores, stats)
+    archetype_result = build_archetype_result(ranked_scores, stats, locale)
 
     return {
         **archetype_result,
@@ -251,16 +256,17 @@ def _archetype_inputs(hit_data: dict, aim: dict, flashes: dict, movement: dict, 
 def main() -> None:
     args = parse_args()
     demo_path = args.demo.expanduser().resolve()
-    _emit_progress(0.08, "Opening demo and reading match tables")
+    locale = args.locale
+    _emit_progress(0.08, translate(locale, "progress.open_demo"))
     demo = load_demo(demo_path)
 
-    _emit_progress(0.22, "Finding the selected player")
+    _emit_progress(0.22, translate(locale, "progress.find_player"))
     player_id, player_name, shots = resolve_player(demo, args.player.strip())
 
     # --- Build Context Records (Teammates/Enemies/Normalized Stats) ---
     records, teammates, enemies = build_match_context(demo, player_name, shots)
 
-    _emit_progress(0.38, "Analyzing all players for context")
+    _emit_progress(0.38, translate(locale, "progress.analyze_context"))
     hits = analyze_hits(demo, player_id)
     movement = analyze_weapon_movement(demo, shots, player_id)
     aim = analyze_aim(
@@ -307,6 +313,7 @@ def main() -> None:
         player_name=player_name,
         match_context=records + teammates,
         comparison_scores=comparison_scores,
+        locale=locale,
     )
 
     _emit_progress(0.82, "Preparing report")
@@ -322,20 +329,20 @@ def main() -> None:
         flashes=flashes,
         utility_deaths=utility_deaths,
         archetype_analysis=archetype_analysis,
+        locale=locale,
     )
 
+    _emit_progress(0.82, translate(locale, "progress.prepare_report"))
     versions = REPORT_GENERATORS if args.report_version == "all" else (args.report_version,)
     outputs = []
     for version in versions:
         report_text, html_report = REPORT_GENERATORS[version](context)
-        suffix = "" if version == "1.0" else "_2.0"
-        text_path = demo_path.with_name(f"{demo_path.stem}_report{suffix}.txt")
-        html_path = demo_path.with_name(f"{demo_path.stem}_report{suffix}.html")
+        text_path, html_path = report_output_paths(demo_path, version, locale)
         text_path.write_text(report_text + "\n", encoding="utf-8")
         html_path.write_text(html_report, encoding="utf-8")
         outputs.append((report_text, text_path, html_path))
 
-    _emit_progress(1.0, "Analysis complete")
+    _emit_progress(1.0, translate(locale, "progress.complete"))
     for report_text, text_path, html_path in outputs:
         print(report_text)
         print(f"\nReport saved to: {text_path}")

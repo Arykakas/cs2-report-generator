@@ -114,6 +114,61 @@ from a report insight to its relevant replay moment.
 **Exit condition:** core flows work on representative demos with limitations
 clearly handled and no regressions to existing report generation.
 
+### 6. Cross-cutting localization
+
+**Status:** Tasks 1�4 complete; Tasks 5�8 pending. Source inspection found
+no locale selector or translation catalog, and user-facing strings are
+currently authored in English.
+
+**Confirmed language set:** English (`en`), Danish (`da-DK`), and Russian
+(`ru-RU`). Spanish and German are not in the current scope.
+
+**Implementation approach:** Use dependency-free JSON catalogs and one shared
+translation helper. Keep English as the fallback. Pass the selected locale
+from Streamlit through the report wrapper and pipeline so in-app previews and
+downloads use the same language and analysis result.
+
+- [x] **Task 1: Confirm locales and terminology.** English, Danish, and
+  Russian are confirmed. Translate CS2 terms fully, avoid gamer shorthand,
+  and retain only the standard `ADR` and `K/D` stat acronyms. Native-speaker
+  wording review is part of Task 8.
+
+| English source | Danish draft (`da-DK`) | Russian draft (`ru-RU`) | Usage |
+|---|---|---|---|
+| Round | Runde | Раунд | Translate ordinary match references. |
+| Entry frag | Første drab under indtrængen | Первое убийство при заходе на точку | Use the full descriptive term, not gamer shorthand. |
+| Flashbang | Blændingsgranat | Светошумовая граната | Use the full translated term, not a short form. |
+| ADR | ADR | ADR | Retain the standard stat acronym. |
+| K/D | K/D | K/D | Retain the standard stat acronym. |
+
+- [x] **Task 2: Inventory user-facing text.** Find UI labels, progress/error
+  messages, report headings, diagnosis copy, coaching narratives, and
+  download labels across the Streamlit app and both report versions.
+- [x] **Task 3: Add localization infrastructure.** Create locale catalogs
+  (`en.json`, `da-DK.json`, `ru-RU.json`), a lookup helper with English
+  fallback, interpolation rules, and a completeness test.
+- [x] **Task 4: Add language selection and propagation.** Add a language
+  selector in the app, retain its value for the session, and pass the locale
+  through `analysis_wrapper.py`, `report.py`, and the analysis pipeline.
+- [ ] **Task 5: Localize the app UI.** Translate upload/player selection,
+  progress, errors, report controls, and other visible app copy. Keep player
+  names, map names, and identifiers unchanged.
+- [ ] **Task 6: Localize both reports.** Translate Report 1.0 and Report 2.0
+  text and HTML, including diagnosis and archetype narratives. Preserve
+  metrics, deterministic narrative choices, and HTML escaping.
+- [ ] **Task 7: Define localized formatting.** Decide whether decimal and
+  percentage formatting follows each locale or retains standard CS2 metric
+  formatting; keep units and K/D semantics consistent.
+- [ ] **Task 8: Verify and document.** Test catalog completeness, fallback,
+  locale propagation, both report versions, downloads, and unchanged analysis
+  values. Review translations with fluent speakers and document how to add a
+  locale.
+
+**Done when:** every supported locale can be selected in the app, all user-facing
+app and report copy has a reviewed translation or intentional English
+fallback, the selected language is the same in preview and download, and
+metrics/Report 1.0 behavior remain unchanged.
+
 ## Dependencies and design constraints
 
 - Validate library data before treating a derived value as a coaching fact.
@@ -137,3 +192,4 @@ implementation is a starting point; its current scoring and narrative logic
 needs the audit and redesign described in the linked Module 1 task file. The
 current Streamlit experience and replay data costs must be inspected before
 implementation estimates or supported-map commitments are made.
+
