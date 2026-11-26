@@ -11,6 +11,9 @@ env/
 *.claude
 *.codex
 *.github
+*.txt
+*.text
+
 
 # Python cache
 __pycache__/
