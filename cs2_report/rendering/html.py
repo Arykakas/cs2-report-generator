@@ -2,6 +2,38 @@
 
 from html import escape
 
+_DIAGNOSIS_LABELS = {
+    "warning-red": "Priority alert",
+    "warning-yellow": "Review",
+    "warning-orange": "Range check",
+    "note-gentle": "Playstyle note",
+    "hint-gray": "Match signal",
+}
+
+
+def render_diagnosis_cards(messages: list[tuple]) -> str:
+    """Render diagnosis messages as consistent, severity-coded cards."""
+    cards = []
+    for index, item in enumerate(messages, start=1):
+        kind, message = item[:2]
+        anchor = item[2] if len(item) > 2 else None
+        label = _DIAGNOSIS_LABELS.get(kind, "Match note")
+        tag = "a" if anchor else "article"
+        link_attrs = f' href="#{escape(anchor, quote=True)}"' if anchor else ""
+        link_class = " diagnosis-card-link" if anchor else ""
+        cards.append(
+            f'<{tag} class="diagnosis-card{link_class} {kind}"{link_attrs}>'
+            f'<div class="diagnosis-card-head">'
+            f'<span class="diagnosis-card-label">{escape(label)}</span>'
+            f'<span class="diagnosis-card-index">INTEL / {index:02d}</span>'
+            f'</div><div class="diagnosis-card-rule"></div>'
+            f'<p class="diagnosis-copy">{escape(message)}</p>'
+            f'<div class="diagnosis-card-footer">MATCH INTELLIGENCE</div>'
+            f'</{tag}>'
+        )
+    return "".join(cards)
+
+
 _TEMPLATE = r'''
 
 f"""<!doctype html>
@@ -30,12 +62,23 @@ f"""<!doctype html>
     .stat-label {{ color: #94a3b8; font-size: .78rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }}
     .stat-card strong {{ color: #f8fafc; font-size: 1.65rem; line-height: 1; font-variant-numeric: tabular-nums; }}
     .stat-card:first-child strong {{ color: #4ade80; }}
-    .conclusion {{ margin: 10px 0; padding: 14px 16px; border: 1px solid transparent; border-left-width: 4px; border-radius: 10px; line-height: 1.55; }}
-    .warning-red {{ background: #7f1d1d33; border-color: #ef444466; border-left-color: #ef4444; color: #fecaca; }}
-    .warning-yellow {{ background: #713f1233; border-color: #f59e0b55; border-left-color: #fbbf24; color: #fde68a; }}
-    .warning-orange {{ background: #7c2d1233; border-color: #f9731655; border-left-color: #fb923c; color: #fed7aa; }}
-    .note-gentle {{ background: #14532d33; border-color: #22c55e55; border-left-color: #4ade80; color: #bbf7d0; }}
-    .hint-gray {{ background: #33415566; border-color: #64748b55; border-left-color: #94a3b8; color: #cbd5e1; }}
+    .diagnosis-grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 260px)); justify-content: start; align-items: stretch; gap: 14px; }}
+    .diagnosis-card {{ position: relative; isolation: isolate; display: flex; flex-direction: column; width: 100%; min-height: 340px; margin: 0; padding: 18px; overflow: hidden; border: 1px solid #334155; border-top: 2px solid var(--diagnosis-accent); border-radius: 14px; background: linear-gradient(155deg, #1b2738, #172235 72%); color: #e2e8f0; box-shadow: inset 0 1px #ffffff0a, 0 10px 26px #02061733; }}
+    .diagnosis-card-link {{ color: inherit; text-decoration: none; cursor: pointer; transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease; }}
+    .diagnosis-card-link:hover, .diagnosis-card-link:focus-visible {{ transform: translateY(-3px); border-color: var(--diagnosis-accent); box-shadow: inset 0 1px #ffffff0a, 0 14px 30px #02061766; outline: none; }}
+    html {{ scroll-behavior: smooth; scroll-padding-top: 24px; }}
+    .diagnosis-card::after {{ content: ""; position: absolute; z-index: -1; right: -48px; bottom: -52px; width: 112px; height: 112px; border: 1px solid #ffffff12; border-radius: 50%; box-shadow: 0 0 0 14px #ffffff05, 0 0 0 29px #ffffff03; pointer-events: none; }}
+    .diagnosis-card-head {{ display: flex; align-items: center; justify-content: space-between; gap: 8px; }}
+    .diagnosis-card-label {{ color: var(--diagnosis-accent); font: 700 .67rem 'Fira Code', monospace; letter-spacing: .1em; text-transform: uppercase; }}
+    .diagnosis-card-index {{ color: #64748b; font: 500 .62rem 'Fira Code', monospace; letter-spacing: .04em; white-space: nowrap; }}
+    .diagnosis-card-rule {{ width: 100%; height: 1px; margin: 14px 0 17px; background: linear-gradient(90deg, #47556999, transparent); }}
+    .diagnosis-copy {{ margin: 0; color: #e2e8f0; font-size: .96rem; line-height: 1.65; }}
+    .diagnosis-card-footer {{ margin-top: auto; padding-top: 18px; color: #64748b; font: 500 .58rem 'Fira Code', monospace; letter-spacing: .12em; }}
+    .warning-red {{ --diagnosis-accent: #f87171; }}
+    .warning-yellow {{ --diagnosis-accent: #fbbf24; }}
+    .warning-orange {{ --diagnosis-accent: #fb923c; }}
+    .note-gentle {{ --diagnosis-accent: #4ade80; }}
+    .hint-gray {{ --diagnosis-accent: #94a3b8; }}
     .diagnosis-list {{ display: grid; gap: 8px; }}
     .visual-grid {{ display: grid; grid-template-columns: minmax(280px, .9fr) minmax(0, 1.1fr); gap: 22px; align-items: start; }}
     .visual-panel {{ min-width: 0; padding: 18px; border: 1px solid #334155; border-radius: 13px; background: #172235; }}
@@ -65,6 +108,7 @@ f"""<!doctype html>
     .summary dt {{ color: #94a3b8; font-size: .8rem; margin-bottom: 6px; }} .summary dd {{ margin: 0; color: #f8fafc; font-weight: 700; font-size: 1.1rem; }}
     .chart {{ width: 100%; }}
     @media (max-width: 760px) {{ body {{ padding: 20px 12px 44px; }} section {{ padding: 18px; }} .visual-grid {{ grid-template-columns: 1fr; }} .stats {{ grid-template-columns: repeat(2, minmax(0, 1fr)); }} header {{ padding: 23px 20px; }} }}
+    @media (max-width: 540px) {{ .diagnosis-grid {{ grid-template-columns: minmax(0, 1fr); }} .diagnosis-card {{ min-height: 270px; }} }}
   </style>
 </head>
 <body>
@@ -80,9 +124,9 @@ f"""<!doctype html>
     </section>
     <section>
       <h2>Match Diagnosis</h2>
-      {(diagnosis_html if diagnosis_html else '<p class="subtitle">No playstyle threshold was triggered for this match.</p>')}
+      <div style="display: flex; flex-direction: column; gap: 12px; width: 100%;">{(diagnosis_html if diagnosis_html else '<p class="subtitle">No playstyle threshold was triggered for this match.</p>')}</div>
     </section>
-    <section>
+    <section id="weapon-visuals">
       <h2>Weapon Visuals</h2>
       <div class="visual-grid">
         <div class="visual-panel"><h3>Where are you actually hitting?</h3>{hit_model_html}</div>
@@ -103,64 +147,39 @@ f"""<!doctype html>
       <div class="chart">{chart_html}</div>
     </section>
     <section>
-      <h2>Moving-shot summary</h2>
-      <dl class="summary">
-        <div><dt>Rifle total shots</dt><dd>{total_shots_count}</dd></div>
-        <div><dt>Moving rifle shots</dt><dd>{moving_shots_count}</dd></div>
-        <div><dt>Moving-shot percentage</dt><dd>{moving_percentage:.1f}%</dd></div>
-        <div><dt>Deaths holding utility</dt><dd>{utility_deaths.height}</dd></div>
-      </dl>
-    </section>
-    <section>
-      <h2>Weapon Playstyle Breakdown</h2>
-      <div class="table-wrap"><table>
-        <thead><tr><th>Category</th><th>Total shots</th><th>Moving shots</th><th>Moving-shot percentage</th></tr></thead>
-        <tbody>{weapon_playstyle_rows}</tbody>
-      </table></div>
-      <p>Average pistol kill distance: {(f'{average_pistol_kill_distance:.1f} units' if average_pistol_kill_distance is not None else 'N/A')}.</p>
-      <p>Pistol kill distances: close (&lt;500): {pistol_distance_buckets['close']}; medium (500–1000): {pistol_distance_buckets['medium']}; long (&gt;1000): {pistol_distance_buckets['long']}.</p>
-      <p>Five-SeveN/Tec-9 average kill distance: {(f'{average_fiveseven_tec9_distance:.1f} units' if average_fiveseven_tec9_distance is not None else 'N/A')}; long-range kills: {fiveseven_tec9_long_kills}.</p>
-    </section>
-    <section>
       <h2>Aim deviation on kills</h2>
-      <p>Average deviation: <strong>{average_deviation_html}</strong></p>
-      <p>AK Avg Pitch Bias: <strong>{(f'{ak_avg_pitch_bias:.2f} deg' if ak_avg_pitch_bias is not None else 'N/A')}</strong></p>
-      <p class="subtitle">Estimated from firing direction to victim head position (victim z + 64).</p>
+      <p>Average deviation: <strong>{average_deviation_html}</strong> degrees (lower is better).</p>
       <h3>By weapon</h3>
       <div class="table-wrap"><table>
         <thead><tr><th>Weapon</th><th>Average deviation</th><th>Sample count</th></tr></thead>
         <tbody>{weapon_deviation_rows}</tbody>
       </table></div>
-      <h3>Kills above 10 degrees</h3>
-      <div class="table-wrap"><table>
-        <thead><tr><th>Kill tick</th><th>Victim</th><th>Deviation</th><th>Firing pitch</th><th>Firing yaw</th><th>Victim pitch</th><th>Victim yaw</th></tr></thead>
-        <tbody>{high_deviation_rows}</tbody>
-      </table></div>
-      <h3>Per-kill detail</h3>
-      <div class="table-wrap"><table>
-        <thead><tr><th>Kill tick</th><th>Shot tick</th><th>Victim</th><th>Weapon</th><th>Deviation</th></tr></thead>
-        <tbody>{kill_deviation_rows}</tbody>
-      </table></div>
     </section>
-    <section>
-      <h2>Suspected firing before crosshair settles</h2>
-      <p class="subtitle">Angular deviation is the pitch/yaw change from the snapshot {ANGULAR_LOOKBACK_TICKS} ticks before firing to the firing angle.</p>
-      <div class="table-wrap"><table>
-        <thead><tr><th>Shot tick</th><th>Weapon</th><th>Angular velocity</th><th>Angular deviation</th><th>Hit enemy?</th></tr></thead>
-        <tbody>{suspected_fire_rows}</tbody>
-      </table></div>
-    </section>
-    <section>
+    {suspected_fire_section_html}
+    <section id="flashbang-table">
       <h2>Flashbang summary</h2>
       <p>{flash_count} flashbangs thrown; {enemy_blinds} enemy blinds; {teammate_blinds} teammate blinds; {self_blinds} self-blinds; {flashes_blinding_no_one} flashes blinded no one.</p>
       <div class="table-wrap"><table>
-        <thead><tr><th>Detonation tick</th><th>Enemies blinded</th><th>Teammates blinded</th><th>Self-blinds</th><th>Result</th></tr></thead>
+        <thead><tr><th>Enemies blinded</th><th>Teammates blinded</th><th>Self-blinds</th><th>Result</th></tr></thead>
         <tbody>{flash_detail_rows}</tbody>
       </table></div>
     </section>
       </div>
     </details>
   </main>
+  <script>
+    document.querySelectorAll('.diagnosis-card-link').forEach(card => {{
+      card.addEventListener('click', event => {{
+        event.preventDefault();
+        const targetId = card.getAttribute('href')?.slice(1);
+        const target = targetId ? document.getElementById(targetId) : null;
+        if (!target) return;
+        const details = target.closest('details');
+        if (details) details.open = true;
+        requestAnimationFrame(() => target.scrollIntoView({{ behavior: 'smooth', block: 'start' }}));
+      }});
+    }});
+  </script>
 </body>
 </html>
 """
@@ -169,3 +188,5 @@ f"""<!doctype html>
 def render_html_report(context: dict) -> str:
     """Render the report using the prepared analysis context."""
     return eval(_TEMPLATE, {"escape": escape}, context)
+
+

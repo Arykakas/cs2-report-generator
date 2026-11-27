@@ -12,6 +12,16 @@ import plotly.graph_objects as go
 
 from ..constants import BODY_ANCHORS, BODY_PARTS, HITGROUP_BY_ID, WEAPON_CATEGORIES, WEAPON_LABELS
 
+_BULLET_PART_ORDER = (
+    "head",
+    "chest",
+    "stomach",
+    "left_arm",
+    "right_arm",
+    "left_leg",
+    "right_leg",
+)
+
 
 def _polygon_path(points: list[tuple[float, float]]) -> str:
     commands = [
@@ -151,9 +161,62 @@ def analyze_hits(demo, player_steamid: int) -> dict:
         human_svg.encode("utf-8")
     ).decode("ascii")
 
-    bullet_fig = go.Figure()
+    initial_points = bullet_points_by_weapon.get(default_hit_weapon, [])
+    initial_traces = []
+    for part in _BULLET_PART_ORDER:
+        part_hits = [hit for hit in initial_points if hit["part"] == part]
+        initial_traces.append(
+            go.Scatter(
+                mode="markers",
+                name=part.replace("_", " ").title(),
+                x=[hit["x"] for hit in part_hits],
+                y=[hit["y"] for hit in part_hits],
+                customdata=[part.replace("_", " ").title() for _ in part_hits],
+                marker={
+                    "color": "rgba(0, 0, 0, 0.001)",
+                    "size": 11,
+                    "opacity": 0.01,
+                    "line": {"width": 0},
+                },
+                hovertemplate="%{customdata} hit<extra></extra>",
+            )
+        )
+
+    base_silhouette = dict(
+        source=human_svg_uri,
+        xref="x",
+        yref="y",
+        x=0,
+        y=0,
+        sizex=1024,
+        sizey=1536,
+        xanchor="left",
+        yanchor="top",
+        sizing="stretch",
+        opacity=1,
+        layer="below",
+    )
+    initial_impact_images = [
+        dict(
+            source=bullet_hole_texture,
+            xref="x",
+            yref="y",
+            x=hit["x"],
+            y=hit["y"],
+            sizex=40.4,
+            sizey=40.4,
+            xanchor="center",
+            yanchor="middle",
+            sizing="stretch",
+            opacity=1,
+            layer="above",
+        )
+        for hit in initial_points
+    ]
+
+    bullet_fig = go.Figure(data=initial_traces)
     bullet_fig.update_layout(
-        images=[dict(source=human_svg_uri, xref="x", yref="y", x=0, y=0, sizex=1024, sizey=1536, xanchor="left", yanchor="top", sizing="stretch", opacity=1, layer="below")],
+        images=[base_silhouette, *initial_impact_images],
         xaxis=dict(range=[0, 1024], visible=False, showgrid=False, zeroline=False, showline=False, ticks="", showticklabels=False, fixedrange=True, domain=[0, 1], constrain="domain"),
         yaxis=dict(range=[1536, 0], visible=False, showgrid=False, zeroline=False, showline=False, ticks="", showticklabels=False, fixedrange=True, domain=[0, 1], scaleanchor="x", scaleratio=1),
         margin=dict(l=0, r=0, t=0, b=0),
@@ -177,12 +240,12 @@ def analyze_hits(demo, player_steamid: int) -> dict:
     {bullet_plot_html}
   </div>
   <div class="bullet-heatmap-legend"><span><i class="dot impact-dot"></i>Bullet impact</span></div>
-  <p class="subtitle">Each impact mark is one hit. Placement is approximated by hitgroup; hover a mark to see its tick.</p>
+  <p class="subtitle">Each impact mark is one hit. Placement is approximated by hit area; hover a mark to see where it landed.</p>
 </div>
 <script>
 const bulletPointsByWeapon = {bullet_points_json};
 const bulletHoleTexture = {json.dumps(bullet_hole_texture)};
-const bulletPartOrder = ["head", "chest", "stomach", "left_arm", "right_arm", "left_leg", "right_leg"];
+const bulletPartOrder = {json.dumps(_BULLET_PART_ORDER)};
 const bulletPartLabels = {{"head": "Head", "chest": "Chest", "stomach": "Stomach", "left_arm": "Left arm", "right_arm": "Right arm", "left_leg": "Left leg", "right_leg": "Right leg"}};
 const bulletPlotLayout = {{
   images: [{{source: {json.dumps(human_svg_uri)}, xref: "x", yref: "y", x: 0, y: 0, sizex: 1024, sizey: 1536, xanchor: "left", yanchor: "top", sizing: "stretch", opacity: 1, layer: "below"}}],
@@ -209,9 +272,9 @@ function selectHitWeapon(weapon) {{
     return {{
       type: "scatter", mode: "markers", name: bulletPartLabels[part],
       x: hits.map(hit => hit.x), y: hits.map(hit => hit.y),
-      customdata: hits.map(hit => [bulletPartLabels[part], hit.tick]),
+      customdata: hits.map(() => bulletPartLabels[part]),
       marker: {{color: "rgba(0, 0, 0, 0.001)", size: 11, opacity: 0.01, line: {{width: 0}}}},
-      hovertemplate: "%{{customdata[0]}} hit<br>Tick %{{customdata[1]}}<extra></extra>"
+      hovertemplate: "%{{customdata}} hit<extra></extra>"
     }};
   }});
   Plotly.react("bullet-heatmap-chart", traces, layoutForWeapon, {{displayModeBar: false, responsive: true}});
@@ -223,4 +286,13 @@ const initialHitWeapon = {json.dumps(default_hit_weapon)};
 if (initialHitWeapon) selectHitWeapon(initialHitWeapon);
 </script>
 """
-    return {"hit_model_data": hit_model_data, "hit_model_html": hit_model_html}
+    total_hits = sum(info["total"] for info in hit_model_data.values())
+    head_hits = sum(info["counts"].get("head", 0) for info in hit_model_data.values())
+    headshot_percentage = head_hits / total_hits * 100 if total_hits else 0.0
+    return {
+        "hit_model_data": hit_model_data,
+        "hit_model_html": hit_model_html,
+        "headshot_percentage": headshot_percentage,
+        "hit_count": total_hits,
+        "trait_components": {},
+    }

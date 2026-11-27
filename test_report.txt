@@ -1,93 +1,38 @@
 SUMMARY
 32 of 232 rifle shots were fired while moving (13.8%).
-Shots fired before the crosshair settled: 1 above 300 deg/s over a 5-tick window.
-Flashbangs: 5 thrown; 4 enemies and 3 teammates blinded; 1 blinded teammates only; 0 blinded no one.
-You fired 50.0% of your Deagle/USP shots while moving. These are precision weapons—make sure you're stationary when you shoot.
+5 flashes thrown; 4 enemies blinded; 3 teammates blinded.
+You threw 5 flashes this match, 2 of which caused teammate or self-blindness. Check the timing and lineups of your flashes—they may be affecting teammates.
+You fired 50.0% of your Deagle/USP shots while moving. Try to be stationary when you shoot.
 
-DETAILED DATA
+MATCH DETAILS
 Player: khorosiya
-Demo: C:\Code\cs2-report\test.dem
-Rifle total shots: 232
-Rifle moving shots: 32
-Rifle moving shot percentage: 13.8%
-Sniper total shots: 0
-Sniper moving shots: 0
-Sniper moving shot percentage: 0.0%
-Unscoped AWP shots: 0
-SMG total shots: 47
-SMG moving shots: 18
-SMG moving shot percentage: 38.3%
-Pistol total shots: 30
-Pistol moving shots: 16
-Pistol moving shot percentage: 53.3%
-Average pistol kill distance: 621.2 units
-Pistol kill distance buckets: close 2, medium 4, long 1
-Five-SeveN/Tec-9 average kill distance: N/A
-Moving shots, velocity 75-100: 15
-Moving shots, velocity >100-150: 9
-Moving shots, velocity >150: 8
-Shots above 150 (tick, weapon):
-  55041, weapon_ak47
-  78904, weapon_ak47
-  78910, weapon_ak47
-  105334, weapon_m4a1_silencer
-  146543, weapon_m4a1
-  146549, weapon_m4a1
-  149525, weapon_m4a1
-  149531, weapon_m4a1
+Demo: test.dem
 Deaths while holding utility: 1
-Utility death ticks: [20929]
-Average aim deviation on kills: 9.28 degrees
-Kill aim deviations (kill tick, shot tick, victim, weapon, degrees):
-  20117, 20117, In the dark, weapon_deagle, 6.01
-  20733, 20733, I GO A, weapon_deagle, 6.78
-  20841, 20841, Tap W, weapon_deagle, 3.10
-  40698, 40698, All my friends are toxic, weapon_deagle, 5.75
-  42026, 42026, Tap W, weapon_m4a1_silencer, 8.87
-  46926, 46926, All my friends are toxic, weapon_m4a1_silencer, 3.57
-  49556, 49556, Tatsu, weapon_m4a1_silencer, 6.76
-  50432, 50432, I GO A, weapon_m4a1_silencer, 7.49
-  59704, 59704, In the dark, weapon_ak47, 14.09
-  60687, 60687, Tap W, weapon_ak47, 2.33
-  76663, 76663, In the dark, weapon_ak47, 16.59
-  82643, 82643, Tatsu, weapon_ak47, 13.31
-  84946, 84946, I GO A, weapon_ak47, 9.85
-  88149, 88149, Tap W, weapon_usp_silencer, 5.32
-  88365, 88365, Tatsu, weapon_usp_silencer, 8.80
-  88656, 88656, All my friends are toxic, weapon_usp_silencer, 11.73
-  94534, 94534, I GO A, weapon_mp9, 26.32
-  95165, 95165, Tap W, weapon_mp9, 17.05
-  123908, 123908, In the dark, weapon_m4a1_silencer, 3.32
-  130848, 130848, In the dark, weapon_m4a1_silencer, 5.81
-  131908, 131908, Tatsu, weapon_m4a1_silencer, 7.02
-  143737, 143737, Tap W, weapon_m4a1_silencer, 17.94
-  148550, 148550, I GO A, weapon_m4a1, 5.62
-Aim deviation by weapon (weapon, average degrees, sample count):
-  weapon_ak47, 11.23, 5
-  weapon_deagle, 5.41, 4
-  weapon_m4a1, 5.62, 1
-  weapon_m4a1_silencer, 7.60, 8
-  weapon_mp9, 21.69, 2
-  weapon_usp_silencer, 8.62, 3
-Kills above 10 degrees (kill tick, victim, deviation, firing pitch, firing yaw, victim pitch, victim yaw):
-  59704, In the dark, 14.09, 5.02, 37.99, -8.81, 40.68
-  76663, In the dark, 16.59, 9.64, -91.49, -6.94, -90.75
-  82643, Tatsu, 13.31, 33.68, 22.27, 20.38, 22.77
-  88656, All my friends are toxic, 11.73, 0.54, -96.96, -10.86, -99.71
-  94534, I GO A, 26.32, 6.82, -113.08, -19.26, -116.68
-  95165, Tap W, 17.05, 16.06, -0.60, -0.89, -2.53
-  143737, Tap W, 17.94, 6.48, -103.18, -11.39, -101.61
-Suspected firing before crosshair settles (angular window 5 ticks, threshold >300 deg/s; shot tick, weapon, angular velocity, angular deviation, hit enemy):
-  20243, weapon_deagle, 646.4 deg/s, 50.50 degrees, No
-Flashbangs thrown: 5
-Enemy blinds: 4
+
+AIM DEVIATION ON KILLS
+Average deviation: 9.28 degrees (lower is better).
+By weapon (average deviation, sample count):
+  AK-47: 11.23 degrees across 5 kills
+  Desert Eagle: 5.41 degrees across 4 kills
+  M4A1: 5.62 degrees across 1 kills
+  M4A1-S: 7.60 degrees across 8 kills
+  MP9: 21.69 degrees across 2 kills
+  USP-S: 8.62 degrees across 3 kills
+
+WEAPON MOVEMENT
+Rifles: 32/232 moving (13.8%)
+SMGs: 18/47 moving (38.3%)
+Pistols: 16/30 moving (53.3%)
+Snipers: 0/0 moving (0.0%)
+You fired before your crosshair settled on the enemy 1 time. Try to stop your mouse before clicking.
+
+FLASHBANGS
+Thrown: 5
+Enemies blinded: 4
 Teammates blinded: 3
 Self-blinds: 1
-Flashes that blinded teammates only: 1
-Flashes that blinded no one: 0
-Flash details (detonation tick, enemies, teammates, self, result):
-  72261, 1, 2, 1, enemy blinded
-  127217, 1, 0, 0, enemy blinded
-  52922, 1, 0, 0, enemy blinded
-  134868, 1, 0, 0, enemy blinded
-  122882, 0, 1, 0, teammates only
+  Flash 1: 1 enemies, 0 teammates, 0 self-blinds — enemy blinded
+  Flash 2: 0 enemies, 1 teammates, 0 self-blinds — teammates only
+  Flash 3: 1 enemies, 0 teammates, 0 self-blinds — enemy blinded
+  Flash 4: 1 enemies, 2 teammates, 1 self-blinds — enemy blinded
+  Flash 5: 1 enemies, 0 teammates, 0 self-blinds — enemy blinded
