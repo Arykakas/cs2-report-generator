@@ -9,36 +9,21 @@ CS2 Report is a Streamlit application that analyzes Counter-Strike 2 demo files 
 - **Detailed Statistics**: Comprehensive player performance metrics
 - **500MB Demo File Support**: Handle large demo files efficiently
 
-## Installation
+## Run on Windows
 
-1. Clone the repository
-2. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
+From the repository root, create a Python 3.12 environment and install the app dependencies.
 
-## Usage
-
-### Running the Application
-
-You can run the application in two ways:
-
-#### Method 1: Using Batch File (Recommended)
-1. Place your `.dem` demo file in the project directory
-2. Run `run_streamlit_app.bat` 
-3. The application will automatically launch in your browser
-
-#### Method 2: Direct Streamlit Command
-```bash
-streamlit run app.py
+```powershell
+py -3.12 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install "awpy==3.3.0" polars plotly "streamlit>=1.67"
+.\.venv\Scripts\python.exe -m streamlit run app.py
 ```
 
-### Generating Reports
+You can also run `run_streamlit_app.bat` from an environment with the dependencies installed.
 
-1. Upload a `.dem` demo file using the file uploader
-2. Enter the player's Steam ID
-3. Click "Generate Report" to create the analysis
-4. View interactive visualizations including bullet heatmaps and weapon statistics
+1. Upload a Counter-Strike 2 `.dem` file.
+2. Choose a player from the roster and select the report language in the header.
+3. Generate the report, switch between Report 2.0 and Report 1.0, or download the selected version.
 
 ### Report language
 
@@ -62,40 +47,31 @@ localization tests and check both rendered report versions. Compare K/D, ADR,
 and trait scores with the English report and check that the app preview and
 download use the same language.
 
-## Project Structure
+## Repository layout
 
-```
-cs2-report/
-├── app.py                 # Main Streamlit application
-├── report.py              # Core reporting logic
-├── run_streamlit_app.bat  # Batch file to run the Streamlit app
-├── requirements.txt       # Python dependencies
-├── README.md              # This file
-└── cs2_report/            # Main package directory
-    ├── __init__.py
-    ├── analysis/
-    │   └── hits.py        # Hit analysis and visualization logic
-    ├── rendering/
-    │   └── html.py        # HTML generation for visualizations
-    └── constants.py       # Application constants
-```
+| Path | Contents |
+| --- | --- |
+| `app.py`, `run_streamlit_app.bat` | Streamlit app and Windows launcher |
+| `report.py`, `analysis_wrapper.py` | Report CLI and the adapter used by the app |
+| `cs2_report/` | Demo parsing, analysis, renderers, and locale catalogs |
+| `assets/` | App artwork and report hit-map images |
+| `docs/` | Project roadmap, architecture, and report design notes |
+| `scripts/` | Manual diagnostics and demo inspection |
+| `tests/` | Automated tests |
+| `.streamlit/config.toml` | Streamlit configuration |
+
+Read the [architecture overview](docs/PROJECT_FLOW.md) or [roadmap](docs/PROJECT_ROADMAP.md).
 
 ## Development
 
-### Creating New Features
+Run these commands from the repository root.
 
-To work on new features:
-1. Create a new branch: `git checkout -b feature/your-feature-name`
-2. Make your changes
-3. Commit and push to your branch
-4. Create a pull request
+```powershell
+python -m unittest discover -s tests -v
+python -m scripts.check_locales
+```
 
-### Bullet Hole Visualization
-
-The bullet hole visualization has been updated with:
-- Reduced bullet hole size by 50% (from 28 to 11 pixels)
-- Maintained all visual enhancements (colors, opacity, white border effects)
-- Fixed JavaScript syntax errors that were preventing report generation
+To inspect Awpy tables, place a demo named `test.dem` at the repository root and run `python -m scripts.explore`. The other scripts are manual diagnostics.
 
 ## Contributing
 

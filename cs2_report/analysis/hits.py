@@ -154,7 +154,7 @@ def analyze_hits(demo, player_steamid: int, locale: str = DEFAULT_LOCALE) -> dic
     bullet_points_json = json.dumps(
         bullet_points_by_weapon, separators=(",", ":"), ensure_ascii=True
     )
-    human_svg_path = Path(__file__).resolve().parents[2] / "human_model.svg"
+    human_svg_path = Path(__file__).resolve().parents[2] / "assets" / "human_model.svg"
     human_svg = human_svg_path.read_text(encoding="utf-8").replace(
         'fill="#000000"', 'fill="#d1d5db"'
     )

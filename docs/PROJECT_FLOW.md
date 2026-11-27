@@ -52,9 +52,9 @@ flowchart TD
 | `cs2_report/analysis/flashes.py` | Flash throw and blinded-player summaries. |
 | `cs2_report/analysis/utility_deaths.py` | Deaths while holding utility. |
 | `cs2_report/rendering/charts.py` | Plotly moving-shot velocity chart. |
-| `cs2_report/rendering/html.py` | HTML report template rendering. |
-| `human_model.svg` | Silhouette background used by the hit map. |
-| `run_report.bat` | Shortcut for the command line report. |
+| `cs2_report/rendering/html.py` and `html_v2.py` | HTML templates for Report 1.0 and 2.0. |
+| `cs2_report/localization.py` | Locale catalogs, message lookup, and localized filenames. |
+| `assets/human_model.svg` | Silhouette background used by the hit map. |
 | `run_streamlit_app.bat` | Shortcut for launching the Streamlit interface. |
 
 ## Run the project
@@ -69,7 +69,7 @@ To generate a report directly:
 python report.py --demo test.dem --player khorosiya
 ```
 
-The generated files are saved beside the demo as `{demo_name}_report.html` and `{demo_name}_report.txt`.
+The CLI saves HTML and text reports beside the demo. Use `--report-version all` for both versions and `--locale` to select a language. The app uses temporary output files and offers an HTML download.
 
 ## Why this layout
 

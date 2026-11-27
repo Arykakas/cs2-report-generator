@@ -1,5 +1,18 @@
 # Session Handoff
 
+## Repository organization
+
+- Grouped planning and architecture notes in docs/ and the two older diagrams in docs/diagrams/. Grouped app and report artwork in assets/ and moved manual diagnostics into scripts/. The root app, report CLI, Windows launcher, and automated tests retain their entry points.
+- Updated app.py, cs2_report/analysis/hits.py, scripts/explore.py, scripts/check_locales.py, README.md, AGENTS.md, the moved project-flow and Module 1 docs, PROJECT_STATE.md, and this handoff. The prior five-file cleanup remains in the working tree.
+- All 34 tests passed on Windows. The live Streamlit app switched languages and both Russian report versions generated from the real demo with the relocated SVG. The locale checker, demo inspector, and narrative diagnostic ran from their new locations. Relative Markdown links were checked.
+- For future cleanup or planning, start with README.md and docs/PROJECT_ROADMAP.md. The independent translation review remains open. The cleanup and reorganization are included in this main branch update.
+
+## Documentation cleanup
+
+- Removed the approved files: .agent-edit-test.md, new_section.md, IMPLEMENTATION_SUMMARY.md, edit_instructions.patch, and cs2_report/analysis/task3_subtasks.md. Updated this handoff.
+- Verified all five paths are absent and found no repository references before deletion. All 34 Windows Python 3.12 tests passed. No staging or commit was requested.
+- For any further cleanup, start with README.md and PROJECT_ROADMAP.md to identify what to retain before removing linked documentation.
+
 ## Main branch integration
 
 - The landing-screen branch was already in main. Merged report-2.0 next and feature/localization last. The merges had no conflicts.

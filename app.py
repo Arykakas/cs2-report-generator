@@ -81,9 +81,10 @@ def html_message(key: str, **values) -> str:
     return escape(message(key, **values))
 
 
-operator_svg = Path(__file__).with_name("tactical_operator.svg").read_bytes()
+assets_dir = Path(__file__).resolve().parent / "assets"
+operator_svg = (assets_dir / "tactical_operator.svg").read_bytes()
 operator_data_uri = "data:image/svg+xml;base64," + b64encode(operator_svg).decode("ascii")
-radar_svg = Path(__file__).with_name("tactical_radar_match_insights.svg").read_bytes()
+radar_svg = (assets_dir / "tactical_radar_match_insights.svg").read_bytes()
 radar_data_uri = "data:image/svg+xml;base64," + b64encode(radar_svg).decode("ascii")
 st.html(
     f'<div class="arena-background-glow" aria-hidden="true"></div>'

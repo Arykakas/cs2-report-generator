@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 
 # Paths to catalogs
-locales_dir = Path(r"C:\Code\cs2-report\cs2_report\locales")
+locales_dir = Path(__file__).resolve().parents[1] / "cs2_report" / "locales"
 en_path = locales_dir / "en.json"
 da_path = locales_dir / "da-DK.json"
 ru_path = locales_dir / "ru-RU.json"

@@ -11,7 +11,7 @@ pl.Config.set_tbl_width_chars(10000)
 pl.Config.set_fmt_str_lengths(10000)
 
 
-demo = Demo(Path(__file__).parent / "test.dem")
+demo = Demo(Path(__file__).resolve().parents[1] / "test.dem")
 demo.load("shots", "kills")
 
 print("demo.shots columns:")

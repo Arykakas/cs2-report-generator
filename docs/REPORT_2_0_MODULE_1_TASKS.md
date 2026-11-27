@@ -64,7 +64,7 @@ has started.
 **Done when:** each candidate metric has a verified source field/table, its
 unit, its attribution rules, and a documented fallback for missing data.
 
-See also: [analysis_audit_findings.md](/C:/Code/cs2-report/analysis_audit_findings.md)
+See also: [analysis_audit_findings.md](analysis_audit_findings.md)
 
 ## Task 2: Define the player and comparison context
 
@@ -84,7 +84,7 @@ See also: [analysis_audit_findings.md](/C:/Code/cs2-report/analysis_audit_findin
 **Done when:** every player in the demo has a consistent context record and
 comparison group, with team, side, and sample coverage represented explicitly.
 
-See also: [context_definition_findings.md](/C:/Code/cs2-report/context_definition_findings.md)
+See also: [context_definition_findings.md](context_definition_findings.md)
 
 ## Task 3: Define trait inputs and scoring rules
 

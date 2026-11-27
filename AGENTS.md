@@ -86,7 +86,7 @@ Before starting work:
 1. Read `.project-context/PROJECT_STATE.md`.
 2. Read `.project-context/SESSION_HANDOFF.md`.
 3. Read `.project-context/DECISIONS_AND_ISSUES.md`.
-4. Read the authoritative task checklist `REPORT_2_0_MODULE_1_TASKS.md`.
+4. Read the authoritative task checklist `docs/REPORT_2_0_MODULE_1_TASKS.md`.
 5. Verify the current Git status before editing.
 6. Treat the task checklist as authoritative for task completion status.
 

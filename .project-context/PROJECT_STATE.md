@@ -37,7 +37,7 @@
 - `cs2_report/analysis/hits.py`: Bullet heatmap and hit analysis logic.
 
 ## Documentation References
-- [REPORT_2_0_PLAN.md](/C:/Code/cs2-report/REPORT_2_0_PLAN.md)
-- [REPORT_2_0_MODULE_1_TASKS.md](/C:/Code/cs2-report/REPORT_2_0_MODULE_1_TASKS.md)
-- [analysis_audit_findings.md](/C:/Code/cs2-report/analysis_audit_findings.md)
-- [context_definition_findings.md](/C:/Code/cs2-report/context_definition_findings.md)
+- [REPORT_2_0_PLAN.md](../docs/REPORT_2_0_PLAN.md)
+- [REPORT_2_0_MODULE_1_TASKS.md](../docs/REPORT_2_0_MODULE_1_TASKS.md)
+- [analysis_audit_findings.md](../docs/analysis_audit_findings.md)
+- [context_definition_findings.md](../docs/context_definition_findings.md)
