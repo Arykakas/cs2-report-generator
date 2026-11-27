@@ -21,16 +21,7 @@ def render_html_report_v2(context: dict) -> str:
     tied_distinctions = archetype.get("tied_distinctions", [])
     distinction_html = ""
     if tied_distinctions:
-        trait_keys = {
-            "Aggression": "trait.aggression",
-            "Precision": "trait.precision",
-            "Utility": "trait.utility",
-            "Positioning": "trait.positioning",
-        }
-        translated_traits = " + ".join(
-            translate(locale, trait_keys.get(trait, trait))
-            for trait in tied_distinctions
-        )
+        translated_traits = " + ".join(tied_distinctions)
         distinction_html = (
             '<div class="focus-row"><span class="focus-chip">'
             f'{escape(translate(locale, "report.v2.tied_distinctions", traits=translated_traits))}'
@@ -138,7 +129,7 @@ def render_html_report_v2(context: dict) -> str:
       <p class="archetype-summary">{escape(str(archetype["summary"]))}</p>
       <div class="focus-row">
         <span class="focus-chip">{escape(translate(locale, "report.v2.primary_strength"))} <strong>{escape(str(archetype["primary_trait"]))}</strong></span>
-        <span class="focus-chip">{escape(translate(locale, "report.v2.next_focus"))} <strong>{escape(str(archetype.get("opportunity", "N/A")))}</strong></span>
+        <span class="focus-chip">{escape(translate(locale, "report.v2.next_focus"))} <strong>{escape(str(archetype.get("opportunity", translate(locale, "report.unavailable"))))}</strong></span>
       </div>
       {distinction_html}
     </section>

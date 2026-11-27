@@ -1,65 +1,37 @@
 ﻿# Project Context: CS2 Match Analyzer
 
-## Shell Environment (WSL / Linux-only) — READ FIRST
+## Shell Environment (Native Windows) — READ FIRST
 
-This project is edited and run inside WSL (Ubuntu). The shell is **bash**.
-Windows PowerShell and `cmd.exe` are NOT available and MUST NOT be used.
-These rules override every other instruction in this file.
+Develop and run this project on Windows using PowerShell from the repository
+root, for example `C:\Code\cs2-report`. Use native Windows paths and tools.
+The project workflow does not require WSL or Bash.
 
-### Hard rules for command execution
+### Commands and tools
 
-- Every command MUST be a POSIX/Linux command run through bash
-  (e.g. `bash -lc "<command>"`).
-- NEVER emit `powershell`, `powershell.exe`, `pwsh`, `-Command`,
-  `New-Item`, `Add-Content`, `Set-Content`, `Get-ChildItem`,
-  `Test-Path`, `$env:`, or any PowerShell syntax.
-- NEVER emit Windows paths (`C:\...`, `\\?\...`). Use Linux paths
-  under the WSL mount, e.g. `/mnt/c/Code/cs2-report` or, preferably,
-  the WSL-native path `/home/<user>/code/cs2-report`.
-- NEVER wrap a command in `powershell -Command "..."`.
-- Do not use `cmd /c`, `start`, or `.bat`/`.ps1` files.
-- Do not chain commands with `;` expecting PowerShell semantics.
-  Use `&&`, `||`, pipes, and subshells as in bash.
+- Use `Get-Location`, `Get-ChildItem`, and `Get-Content -LiteralPath` to
+  inspect the workspace. Use `rg` for searches, or `Select-String` when
+  ripgrep is unavailable.
+- Prefer the repository's Windows virtual environment, if it exists.
+  Verify the interpreter with `.\.venv\Scripts\python.exe --version`.
+  Use `py -0p` to list installed interpreters when choosing a Python
+  installation. Confirm that the selected interpreter has the project
+  dependencies before using it.
+- Run tests with `.\.venv\Scripts\python.exe -m unittest discover -s tests -v`
+  and start the app with `.\.venv\Scripts\python.exe -m streamlit run app.py`.
+  If you verified a different interpreter, substitute its path.
+- Invoke pip through the same interpreter, for example
+  `.\.venv\Scripts\python.exe -m pip`. You can call the virtual environment's
+  interpreter directly without activating it.
+- Use PowerShell syntax compatible with the installed version. Run dependent
+  commands separately when a failure must stop the next operation.
 
-### Preferred tools inside WSL
+### Git and file edits
 
-- File creation: `touch`, `cat > file <<'EOF' ... EOF`, `printf`.
-- Text edits: `sed -i`, `perl -0pi -e`, `python3 - <<'PY' ... PY`,
-  or `git apply` for patches.
-- Inspection: `ls`, `cat`, `sed -n`, `grep -n`, `head`, `tail`,
-  `git status`, `git diff`.
-- Python: call `python3`, never `python` unless verified.
-- Package installs: `apt`, `pip3`, `npm` inside WSL only.
-
-### Python edit pattern (avoid quote-escaping hell)
-
-When a change is too complex for `sed`, write a here-doc script
-instead of an inline `-c` string:
-
-    python3 - <<'PY'
-    from pathlib import Path
-    p = Path("app.py")
-    s = p.read_text(encoding="utf-8")
-    # ... targeted replace ...
-    p.write_text(s, encoding="utf-8")
-    PY
-
-Do NOT generate `python -c "..."` one-liners containing quotes,
-newlines, or f-strings — they break under shell escaping.
-
-### Git workflow inside WSL
-
-- Use LF line endings. Do not introduce CRLF.
-- `git config core.autocrlf false` is expected in this repo.
-- Verify edits with `git diff --check` and `git diff` before
-  declaring completion.
-
-### If a command fails
-
-- Do not retry the same command.
-- Do not switch to PowerShell as a workaround.
-- Read the error, inspect the file, and choose a different
-  bash-native approach (here-doc, `sed`, or `git apply`).
+- Use Git for Windows. Check `git status --short` before editing and review
+  `git diff` and `git diff --check` afterward.
+- Preserve a file's encoding, BOM, and existing line endings. Use LF for new
+  text files unless the file type or repository attributes specify otherwise.
+  Avoid PowerShell redirection for edits where encoding or line endings matter.
 
 ## Project overview
 A local Counter-Strike 2 demo analysis application.
@@ -174,7 +146,7 @@ Before ending a work session:
 Choose the editing method according to the scope of the change.
 
 **Small, targeted changes**
-- Use sed -i, perl -0pi -e, or a short python3 here-doc.
+- Use a targeted patch or a short Python script that preserves the file format.
 - Target the exact intended occurrence.
 - Check that the expected match exists before modifying anything.
 - Ensure the operation does not unintentionally modify multiple occurrences.
@@ -203,7 +175,6 @@ Choose the editing method according to the scope of the change.
 - Choose a different method or construct a corrected patch.
 - Stop after two unsuccessful attempts and report the problem.
 - Never claim that an edit succeeded based only on a command being executed.
-- Never fall back to PowerShell or cmd.exe when a bash edit fails.
 
 ### 4. Verification Requirements
 

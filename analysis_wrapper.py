@@ -28,6 +28,7 @@ def _run_report(
 
     env = os.environ.copy()
     env["CS2_REPORT_PROGRESS"] = "1"
+    env["PYTHONIOENCODING"] = "utf-8"
     process = subprocess.Popen(
         [
             sys.executable, str(script), "--demo", str(demo),

@@ -1,6 +1,7 @@
 import unittest
 from pathlib import Path
 from string import Formatter
+from unittest.mock import patch
 
 from cs2_report.localization import (
     DEFAULT_LOCALE,
@@ -41,6 +42,14 @@ class LocalizationCatalogTests(unittest.TestCase):
             translate("unsupported", "app.language"),
             translate("en", "app.language"),
         )
+
+    def test_missing_message_uses_english_fallback_and_interpolates(self):
+        key = "app.report.version_option"
+        english = load_catalog(DEFAULT_LOCALE)
+        danish = {message: value for message, value in load_catalog("da-DK").items() if message != key}
+        catalogs = {DEFAULT_LOCALE: english, "da-DK": danish}
+        with patch("cs2_report.localization.load_catalog", side_effect=catalogs.__getitem__):
+            self.assertEqual(translate("da-DK", key, version="2.0"), "Report 2.0")
 
     def test_archetype_labels_are_localized(self):
         self.assertNotEqual(

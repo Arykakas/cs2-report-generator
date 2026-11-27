@@ -136,9 +136,9 @@ f"""<!doctype html>
           <h3>{escape(translate(locale, "report.v1.weapon_playstyle"))}</h3>
           <div class="table-wrap"><table><thead><tr><th>{escape(translate(locale, "report.v1.category"))}</th><th>{escape(translate(locale, "report.v1.total_shots"))}</th><th>{escape(translate(locale, "report.v1.moving_shots"))}</th><th>{escape(translate(locale, "report.v1.moving_percent"))}</th></tr></thead><tbody>{weapon_playstyle_rows}</tbody></table></div>
           <h3>{escape(translate(locale, "report.v1.pistol_engagements"))}</h3>
-          <p class="subtitle">{escape(translate(locale, "report.v1.average_kill_distance", distance=(f'{average_pistol_kill_distance:.1f} {translate(locale, "unit.game_units")}' if average_pistol_kill_distance is not None else 'N/A')))}</p>
+          <p class="subtitle">{escape(translate(locale, "report.v1.average_kill_distance", distance=(f'{average_pistol_kill_distance:.1f} {translate(locale, "unit.game_units")}' if average_pistol_kill_distance is not None else translate(locale, "report.unavailable"))))}</p>
           <p class="subtitle">{escape(translate(locale, "report.v1.distance_buckets", close=pistol_distance_buckets['close'], medium=pistol_distance_buckets['medium'], long=pistol_distance_buckets['long']))}</p>
-          <p class="subtitle">{escape(translate(locale, "report.v1.fiveseven_average", distance=(f'{average_fiveseven_tec9_distance:.1f} {translate(locale, "unit.game_units")}' if average_fiveseven_tec9_distance is not None else 'N/A'), kills=fiveseven_tec9_long_kills))}</p>
+          <p class="subtitle">{escape(translate(locale, "report.v1.fiveseven_average", distance=(f'{average_fiveseven_tec9_distance:.1f} {translate(locale, "unit.game_units")}' if average_fiveseven_tec9_distance is not None else translate(locale, "report.unavailable")), kills=fiveseven_tec9_long_kills))}</p>
         </div>
       </div>
     </section>

@@ -49,9 +49,9 @@ def _emit_progress(fraction: float, message: str) -> None:
         print(f"CS2_PROGRESS|{fraction:.2f}|{message}", file=sys.stderr, flush=True)
 
 
-def _analyze_player(demo, player_name: str, player_id: int, shots) -> tuple[dict, dict, dict, object, dict]:
+def _analyze_player(demo, player_name: str, player_id: int, shots, locale: str = DEFAULT_LOCALE) -> tuple[dict, dict, dict, object, dict]:
     """Collect shared analysis results before selecting a report renderer."""
-    hits = analyze_hits(demo, player_id)
+    hits = analyze_hits(demo, player_id, locale)
     movement = analyze_weapon_movement(demo, shots, player_id)
     aim = analyze_aim(
         demo, shots, player_id,
@@ -267,7 +267,7 @@ def main() -> None:
     records, teammates, enemies = build_match_context(demo, player_name, shots)
 
     _emit_progress(0.38, translate(locale, "progress.analyze_context"))
-    hits = analyze_hits(demo, player_id)
+    hits = analyze_hits(demo, player_id, locale)
     movement = analyze_weapon_movement(demo, shots, player_id)
     aim = analyze_aim(
         demo, shots, player_id,
@@ -316,7 +316,7 @@ def main() -> None:
         locale=locale,
     )
 
-    _emit_progress(0.82, "Preparing report")
+    _emit_progress(0.82, translate(locale, "progress.prepare_report"))
     context = build_report_context(
         demo_path=demo_path,
         demo=demo,
@@ -332,7 +332,6 @@ def main() -> None:
         locale=locale,
     )
 
-    _emit_progress(0.82, translate(locale, "progress.prepare_report"))
     versions = REPORT_GENERATORS if args.report_version == "all" else (args.report_version,)
     outputs = []
     for version in versions:

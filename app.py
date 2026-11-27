@@ -2,11 +2,16 @@ from pathlib import Path
 from html import escape
 from base64 import b64encode
 import importlib
+import json
 import tempfile
 
 import streamlit as st
 
 import analysis_wrapper as report_runner
+from cs2_report.localization import (
+    DEFAULT_LOCALE, LOCALE_NAMES, SUPPORTED_LOCALES,
+    localized_report_stem, translate,
+)
 
 # Streamlit can keep locally imported modules cached across script reruns.
 report_runner = importlib.reload(report_runner)
@@ -22,12 +27,12 @@ def _clear_report() -> None:
     st.session_state.pop("preview_report_version", None)
 
 
-def _scan_player_roster(demo_file) -> None:
+def _scan_player_roster(demo_file, locale) -> None:
     """Read the uploaded demo once and store players for the dropdown."""
     st.session_state.player_options = {}
     st.session_state.player_options_error = None
 
-    progress = st.progress(0.08, text="Opening demo file")
+    progress = st.progress(0.08, text=translate(locale, "app.progress.opening"))
     try:
         from awpy import Demo
 
@@ -36,10 +41,10 @@ def _scan_player_roster(demo_file) -> None:
             temp_demo_path = Path(temp_dir) / upload_name
             temp_demo_path.write_bytes(demo_file.getbuffer())
 
-            progress.progress(0.28, text="Parsing match and player data")
+            progress.progress(0.28, text=translate(locale, "app.progress.parsing"))
             demo = Demo(temp_demo_path)
             demo.load("shots")
-            progress.progress(0.86, text="Preparing the player selector")
+            progress.progress(0.86, text=translate(locale, "app.progress.preparing"))
             player_rows = (
                 demo.shots.select("name", "steamid")
                 .drop_nulls()
@@ -52,7 +57,7 @@ def _scan_player_roster(demo_file) -> None:
             str(row["steamid"]): str(row["name"])
             for row in player_rows
         }
-        progress.progress(1.0, text="Roster ready")
+        progress.progress(1.0, text=translate(locale, "app.progress.roster_ready"))
     except Exception as exc:
         st.session_state.player_options_error = str(exc)
     finally:
@@ -60,10 +65,21 @@ def _scan_player_roster(demo_file) -> None:
 
 
 st.set_page_config(
-    page_title="CS2 Match Analyzer",
+    page_title=translate(st.session_state.get("report_locale", DEFAULT_LOCALE), "report.title"),
     page_icon=":material/sports_esports:",
     layout="wide",
 )
+
+locale = st.session_state.get("report_locale", DEFAULT_LOCALE)
+
+
+def message(key: str, **values) -> str:
+    return translate(locale, f"app.{key}", **values)
+
+
+def html_message(key: str, **values) -> str:
+    return escape(message(key, **values))
+
 
 operator_svg = Path(__file__).with_name("tactical_operator.svg").read_bytes()
 operator_data_uri = "data:image/svg+xml;base64," + b64encode(operator_svg).decode("ascii")
@@ -82,7 +98,6 @@ st.html(
       .radar-backdrop { position: fixed; z-index: 0; top: 50%; left: -18px; width: min(25vw, 430px); height: 90vh; transform: translateY(-50%); object-fit: contain; object-position: left center; opacity: .34; filter: drop-shadow(0 0 30px #8b5cf622); mask-image: linear-gradient(90deg, #000 0%, #000 68%, transparent 100%); pointer-events: none; }
       .operator-backdrop { position: fixed; z-index: 0; top: 5vh; right: -3vw; width: min(45vw, 630px); height: 92vh; object-fit: contain; object-position: right center; opacity: .2; filter: drop-shadow(0 0 38px #8b5cf633); mask-image: linear-gradient(90deg, transparent 0%, #000 28%, #000 100%); pointer-events: none; }
       .arena-shell { position: relative; z-index: 1; max-width: 980px; margin: 0 auto 1.4rem; }
-      .arena-topline { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1.2rem; }
       .arena-brand { color: #f1f5f9; font: 600 .82rem 'Fira Code', monospace; letter-spacing: .12em; text-transform: uppercase; }
       .arena-status { display: inline-flex; align-items: center; gap: .5rem; border: 1px solid #29354a; border-radius: 999px; padding: .42rem .72rem; color: #aab7c9; font: 500 .68rem 'Fira Code', monospace; letter-spacing: .08em; text-transform: uppercase; }
       .arena-status::before { content: ''; width: .45rem; height: .45rem; border-radius: 50%; background: #34d399; box-shadow: 0 0 12px #34d39988; }
@@ -118,7 +133,6 @@ st.html(
       .st-key-generate_report button { min-height: 3rem; font-weight: 700; letter-spacing: .025em; }
       .st-key-generate_report button:disabled { opacity: 1; }
       @media (max-width: 640px) {
-        .arena-topline { align-items: flex-start; flex-direction: column; }
         .arena-hero { border-radius: 16px; }
         .radar-backdrop { left: -24vw; width: 58vw; opacity: .14; }
         .operator-backdrop { right: -25vw; width: 78vw; opacity: .12; }
@@ -127,20 +141,41 @@ st.html(
         *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
       }
     </style>
+    """
+)
+
+with st.container(horizontal=True, horizontal_alignment="center"):
+    with st.container(
+        key="app_header",
+        width=980,
+        horizontal=True,
+        horizontal_alignment="distribute",
+        vertical_alignment="center",
+    ):
+        st.html(f'<div class="arena-brand">{html_message("brand")}</div>', width="content")
+        st.html(f'<div class="arena-status">{html_message("local_status")}</div>', width="content")
+        st.selectbox(
+            message("language"),
+            options=SUPPORTED_LOCALES,
+            index=SUPPORTED_LOCALES.index(DEFAULT_LOCALE),
+            format_func=LOCALE_NAMES.__getitem__,
+            key="report_locale",
+            on_change=_clear_report,
+            width=180,
+        )
+
+st.html(
+    f"""
     <div class="arena-shell">
-      <div class="arena-topline">
-        <div class="arena-brand">CS2 // Match analyzer</div>
-        <div class="arena-status">Local analysis · No Steam sign-in</div>
-      </div>
       <header class="arena-hero">
-        <p class="arena-eyebrow">Post-match performance lab</p>
-        <h1 class="arena-title">Review the round.<br><span>Own the next one.</span></h1>
-        <p class="arena-copy">Drop in a Counter-Strike 2 demo, pick your player, and get a focused breakdown of movement, aim, utility, and hit distribution.</p>
+        <p class="arena-eyebrow">{html_message("hero_eyebrow")}</p>
+        <h1 class="arena-title">{html_message("hero_title_first")}<br><span>{html_message("hero_title_second")}</span></h1>
+        <p class="arena-copy">{html_message("hero_description")}</p>
         <div class="arena-perks">
-          <span class="arena-perk">MOVEMENT ANALYSIS</span>
-          <span class="arena-perk">AIM DEVIATION</span>
-          <span class="arena-perk">UTILITY IMPACT</span>
-          <span class="arena-perk">HIT MAP</span>
+          <span class="arena-perk">{html_message("perk_movement")}</span>
+          <span class="arena-perk">{html_message("perk_aim")}</span>
+          <span class="arena-perk">{html_message("perk_utility")}</span>
+          <span class="arena-perk">{html_message("perk_hits")}</span>
         </div>
       </header>
     </div>
@@ -152,59 +187,62 @@ outer_left, center, outer_right = st.columns([0.7, 2.6, 0.7])
 with center:
     with st.container(border=True, key="upload_stage"):
         st.markdown(
-            '<div class="upload-intro"><p class="upload-step">01 / Match file</p>'
-            '<p class="upload-title">Upload your demo</p>'
-            '<p class="upload-hint">Drag a <strong>.dem</strong> file into the drop zone or browse from your device. Up to 500 MB.</p></div>',
+            f'<div class="upload-intro"><p class="upload-step">{html_message("step_file")}</p>'
+            f'<p class="upload-title">{html_message("upload_title")}</p>'
+            f'<p class="upload-hint">{html_message("upload_description")}</p></div>',
             unsafe_allow_html=True,
         )
         demo_file = st.file_uploader(
-            "Choose a Counter-Strike 2 demo",
+            message("uploader_label"),
             type=["dem"],
             key="demo_upload",
             on_change=_reset_demo_state,
-            help="The uploaded file is processed locally by this app.",
+            help=message("uploader_help"),
         )
 
         selected_player = None
         if demo_file is not None:
             if "player_options" not in st.session_state:
-                with st.status("Parsing demo roster", expanded=False) as roster_status:
-                    _scan_player_roster(demo_file)
+                with st.status(message("progress.parsing"), expanded=False) as roster_status:
+                    _scan_player_roster(demo_file, locale)
                     if st.session_state.player_options_error:
-                        roster_status.update(label="Roster scan failed", state="error")
+                        roster_status.update(label=message("progress.roster_failed"), state="error")
                     else:
-                        roster_status.update(label="Player roster ready", state="complete")
+                        roster_status.update(label=message("progress.roster_ready"), state="complete")
 
             st.markdown(
                 f'<div class="file-summary"><span class="file-token">DEM</span><div><strong>{escape(demo_file.name)}</strong>'
-                f'<small>{demo_file.size / (1024 * 1024):.1f} MB · Demo loaded</small></div></div>',
+                f'<small>{html_message("file_loaded", size=demo_file.size / (1024 * 1024))}</small></div></div>',
                 unsafe_allow_html=True,
             )
 
             if st.session_state.get("player_options_error"):
                 st.error(
-                    f"Could not read the demo roster: {st.session_state.player_options_error}",
-                    title="Roster scan failed",
+                    message("error.roster", error=st.session_state.player_options_error),
+                    title=message("progress.roster_failed"),
                 )
             else:
                 player_options = st.session_state.get("player_options", {})
                 if player_options:
-                    st.markdown('<p class="upload-step">02 / Player identity</p>', unsafe_allow_html=True)
+                    st.markdown(
+                        f'<p class="upload-step">{html_message("step_player")}</p>',
+                        unsafe_allow_html=True,
+                    )
                     selected_player = st.selectbox(
-                        "Choose a player",
+                        message("player_label"),
                         options=list(player_options),
                         format_func=lambda steamid: f"{player_options[steamid]}  ·  {steamid}",
                         key="selected_player",
                         on_change=_clear_report,
                     )
-                    st.caption("Steam ID is shown to distinguish players with duplicate names.")
+                    st.caption(message("player_hint"))
                 else:
-                    st.warning("No players with recorded shots were found in this demo.")
+                    st.warning(message("no_players"))
 
         can_generate = demo_file is not None and selected_player is not None
         button_progress = st.empty()
         generate_report = st.button(
-            "Generate match report",
+            message("button.generate"),
             type="primary",
             icon=":material/analytics:",
             width="stretch",
@@ -218,6 +256,7 @@ if generate_report:
 
     def update_button_progress(fraction: float, _message: str = "") -> None:
         percent = max(0, min(100, round(fraction * 100)))
+        progress_label = json.dumps(message("progress.analyzing", percent=percent), ensure_ascii=False)
         button_progress.html(
             f"""
             <style>
@@ -230,7 +269,7 @@ if generate_report:
                 transition: background 180ms ease-out;
               }}
               .st-key-generate_report button::after {{
-                content: "ANALYZING MATCH · {percent}%";
+                content: {progress_label};
                 position: absolute;
                 inset: 0;
                 display: grid;
@@ -254,6 +293,7 @@ if generate_report:
                 temp_demo_path,
                 selected_player,
                 progress_callback=update_button_progress,
+                locale=locale,
             )
 
         update_button_progress(1.0)
@@ -261,16 +301,16 @@ if generate_report:
         st.session_state.report_result = {
             "html_reports": html_reports,
             "file_names": {
-                "1.0": f"{Path(demo_file.name).stem or 'match'}_report.html",
-                "2.0": f"{Path(demo_file.name).stem or 'match'}_report_2.0.html",
+                version: f"{localized_report_stem(Path(demo_file.name).stem or 'match', version, locale)}.html"
+                for version in html_reports
             },
             "player_name": st.session_state.player_options[selected_player],
             "demo_name": Path(demo_file.name).name,
         }
     except Exception as exc:
         button_progress.empty()
-        st.error(str(exc), title="Report generation failed")
-        with st.expander("Technical details"):
+        st.error(str(exc), title=message("error.report_failed"))
+        with st.expander(message("error.technical_details")):
             st.exception(exc)
 
 report_result = st.session_state.get("report_result")
@@ -285,20 +325,20 @@ if report_result:
         with st.container(border=True, key="analysis_complete"):
             st.markdown(
                 '<div class="complete-header"><div>'
-                '<p class="upload-step">03 / Match review</p>'
-                '<p class="complete-heading">Report ready</p>'
-                '<p class="complete-copy">Your tactical breakdown is ready to save.</p>'
-                '</div><span class="complete-state">Analysis complete</span></div>'
-                f'<div class="complete-meta"><span>MATCH</span><strong>{escape(report_result["demo_name"])}</strong>'
-                '<i class="complete-separator">/</i><span>PLAYER</span>'
+                f'<p class="upload-step">{html_message("step_review")}</p>'
+                f'<p class="complete-heading">{html_message("report.ready")}</p>'
+                f'<p class="complete-copy">{html_message("report.ready_copy")}</p>'
+                f'</div><span class="complete-state">{html_message("report.complete")}</span></div>'
+                f'<div class="complete-meta"><span>{html_message("label.match")}</span><strong>{escape(report_result["demo_name"])}</strong>'
+                f'<i class="complete-separator">/</i><span>{html_message("label.player")}</span>'
                 f'<strong>{escape(report_result["player_name"])}</strong></div>',
                 unsafe_allow_html=True,
             )
     report_version = st.segmented_control(
-        "Report version",
+        message("report.version"),
         options=("2.0", "1.0"),
         default="2.0",
-        format_func=lambda version: f"Report {version}",
+        format_func=lambda version: message("report.version_option", version=version),
         key="preview_report_version",
     )
     if report_version:
@@ -306,11 +346,11 @@ if report_result:
             report_result["html_reports"][report_version],
             width="stretch",
             height="content",
-            alt=f"Report {report_version} for {report_result['player_name']}",
+            alt=message("report.preview_alt", version=report_version, player=report_result["player_name"]),
         )
         with st.container(horizontal=True, horizontal_alignment="right"):
             st.download_button(
-                "Download report",
+                message("report.download"),
                 data=report_result["html_reports"][report_version],
                 file_name=report_result["file_names"][report_version],
                 mime="text/html",
@@ -321,4 +361,4 @@ if report_result:
             )
 
 
-st.caption("CS2 MATCH ANALYZER  /  ANALYSIS RUNS LOCALLY ON THIS MACHINE")
+st.caption(message("footer"))

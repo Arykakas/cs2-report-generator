@@ -13,7 +13,10 @@
 - **Player Participation Threshold**: Players must have >=3 rounds and >=10 shots to be included in teammate rankings (prevents outliers from small samples).
 - **Data Separation**: Raw measurements are kept distinct from relative ranks to allow the narrative engine to explain "why" a score was given.
 
+- **Localization formatting**: Report metrics use decimal points and consistent percentage precision across locales. Unit labels are translated. Player and map names, weapon names, and identifiers retain their original spelling.
+
 ## Known Bugs & Unresolved Problems
+- [ ] **Translation review**: A wording pass revised Danish and Russian UI and coaching copy. Independent fluent-speaker review remains open. Streamlit's built-in uploader controls and technical exception details can display English.
 - [ ] **Smoke Success Metric**: No reliable smoke-obscuration metric currently exists in `awpy`. Decision: focus on flash/utility damage for now.
 - [x] **Side Awareness Verification**: Pooled match data and the side-aware-to-pooled fallback are implemented and unit-covered. Full side-aware pipeline splitting remains a future implementation decision outside the current single-demo verification scope.
 - [x] **Teammate Trait Scoring**: Eligible teammates are scored through the canonical raw-score path and passed to `calculate_tie_aware_ranks()` with selected-player metadata.

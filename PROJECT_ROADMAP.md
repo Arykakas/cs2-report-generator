@@ -116,9 +116,9 @@ clearly handled and no regressions to existing report generation.
 
 ### 6. Cross-cutting localization
 
-**Status:** Tasks 1–4 complete; Tasks 5–8 pending. Source inspection found
-no locale selector or translation catalog, and user-facing strings are
-currently authored in English.
+**Status:** Tasks 1-7 and Task 8 technical verification and documentation
+are complete. Task 8 remains open for independent fluent-speaker review of
+Danish and Russian.
 
 **Confirmed language set:** English (`en`), Danish (`da-DK`), and Russian
 (`ru-RU`). Spanish and German are not in the current scope.
@@ -150,19 +150,21 @@ downloads use the same language and analysis result.
 - [x] **Task 4: Add language selection and propagation.** Add a language
   selector in the app, retain its value for the session, and pass the locale
   through `analysis_wrapper.py`, `report.py`, and the analysis pipeline.
-- [ ] **Task 5: Localize the app UI.** Translate upload/player selection,
+- [x] **Task 5: Localize the app UI.** Translate upload/player selection,
   progress, errors, report controls, and other visible app copy. Keep player
   names, map names, and identifiers unchanged.
-- [ ] **Task 6: Localize both reports.** Translate Report 1.0 and Report 2.0
+- [x] **Task 6: Localize both reports.** Translate Report 1.0 and Report 2.0
   text and HTML, including diagnosis and archetype narratives. Preserve
   metrics, deterministic narrative choices, and HTML escaping.
-- [ ] **Task 7: Define localized formatting.** Decide whether decimal and
-  percentage formatting follows each locale or retains standard CS2 metric
-  formatting; keep units and K/D semantics consistent.
-- [ ] **Task 8: Verify and document.** Test catalog completeness, fallback,
-  locale propagation, both report versions, downloads, and unchanged analysis
-  values. Review translations with fluent speakers and document how to add a
-  locale.
+- [x] **Task 7: Define localized formatting.** Use decimal points and consistent
+  percentage precision across languages. Translate unit labels and preserve K/D
+  semantics.
+- [ ] **Task 8: Verify and document.**
+  - [x] Check catalog coverage, English fallback, and format placeholders.
+  - [x] Verify language switching, both report versions, preview and download
+    parity, and unchanged displayed metrics.
+  - [x] Document how to add a locale and where English can still appear.
+  - [ ] Obtain independent fluent-speaker review of Danish and Russian.
 
 **Done when:** every supported locale can be selected in the app, all user-facing
 app and report copy has a reviewed translation or intentional English

@@ -1,5 +1,50 @@
 # Session Handoff
 
+## Localization branch update
+
+- Added a repository-wide HTML ignore rule alongside the existing text-file rule. Removed the remaining tracked text artifacts from the Git index and kept the local copies.
+- The localization update includes the app, wrapper, report rendering, locale catalogs, tests, roadmap, README, and project context. It also includes the earlier native Windows AGENTS.md update.
+- All 34 tests passed on Windows Python 3.12. Independent fluent-speaker review of Danish and Russian remains open. Start with the two locale catalogs and compare wording with the app and both report versions.
+
+## Localization verification and wording review
+
+- Revised Danish and Russian player labels, report headings, and coaching copy. Tightened catalog checks to verify exact key parity, nonempty values, formatting and English fallback. Added AppTest coverage for matching localized preview HTML and download payloads across both report versions and all three locales.
+- Changed the Danish and Russian catalogs, tests/test_app_report_view.py, tests/test_localization.py, tests/test_localization_completeness.py, README.md, PROJECT_ROADMAP.md, and the three project-context files.
+- Windows Python 3.12 passed all 34 tests. A live Streamlit session switched to Danish and Russian. The real demo generated both HTML and text report versions via the wrapper for every locale. The five displayed match statistics and the four trait scores matched the English reports.
+- Task 8 technical checks and documentation are complete. Independent fluent-speaker review is pending. Start with cs2_report/locales/da-DK.json and ru-RU.json, then compare the wording with the app preview and both report versions. Streamlit's built-in uploader controls and raw technical details can still display English.
+
+## Player heading interpolation
+
+- Fixed the upload-stage heading in app.py by interpolating the translated label. The missing f-string prefix had exposed the template expression in the UI.
+- Changed app.py, tests/test_app_report_view.py, and this handoff. The new AppTest exercises the uploaded-demo branch with a mocked upload and cached roster in English, Danish, and Russian. All 32 tests passed on Windows.
+- Fluent-speaker review remains open. Start with the Danish and Russian catalogs and compare the wording with the app and both reports.
+
+## Header language selector
+
+- Moved the existing selector into the branded header row in app.py. It still controls the UI and generated reports.
+- Changed app.py and this handoff. All 31 Windows tests passed and a live Streamlit Agent API check confirmed Danish and Russian switching. AppTest caught an unsupported alignment value on the first pass. Streamlit's supported distribute option passed the rerun.
+- The next localization work remains fluent-speaker review. Start with the Danish and Russian catalogs in cs2_report/locales and compare wording in app.py and both rendered reports.
+
+## Localization implementation
+
+- Completed roadmap Tasks 4-7. The app uses a session language selector for English, Danish, and Russian. Changing language retains the uploaded demo and player selection and clears the previous report so the next preview and download share the selected language. Reports use the same numeric formatting in every locale.
+- Files changed: app.py, analysis_wrapper.py, cs2_report/pipeline.py, cs2_report/analysis/hits.py, cs2_report/report_common.py, both HTML renderers, all three locale catalogs, tests/test_app_report_view.py, README.md, PROJECT_ROADMAP.md, and the three project-context files.
+- Windows Python 3.12 passed 31 unit and AppTest cases. The live Streamlit agent API switched to Danish and Russian and returned translated controls. The real demo generated both text and HTML report versions in all three languages with identical trait scores. Checks also covered localized progress, report filenames, and hit-map labels.
+- The first real-demo Russian run failed because redirected subprocess output used the Windows code page. The wrapper now forces UTF-8 and the repeated run passed. The first live check sent an internal locale code where the Agent API expected an option label. Retrying with display labels passed.
+- Task 8 remains open for fluent-speaker review. Start with the Danish and Russian catalogs in cs2_report/locales and review the wording against both report versions and the app. Streamlit's own uploader controls and technical exceptions can show English.
+
+## Native Windows workflow — 2026-11-27
+
+- Updated AGENTS.md to use PowerShell, Git for Windows, and the Windows Python interpreter. Updated this handoff to point future verification at native Windows.
+- Read back both files and reviewed the Git diff. This documentation change requires no app tests. The next implementation task and its starting files are listed below.
+
+## Repository orientation — 2026-11-27
+
+- Reviewed the active Streamlit, CLI, Awpy/Polars analysis, shared report context, two renderers, locale catalogs, tests, and project plans. The inventory covered 71 tracked and non-ignored entries. Existing handoff notes below are historical.
+- The Module 1 checklist records completion for the available demo. The localization roadmap marks Tasks 1–3 complete. The wrapper and CLI already accept a locale, while the Streamlit selector is pending and report localization is partial.
+- Only this handoff was edited. WSL Python 3.14 parsed all 30 Python files. The 20 archetype and 8 localization tests passed. Full discovery could not import the Streamlit AppTest module. Streamlit, Awpy, Polars, and Plotly were absent in the WSL interpreter, and the existing venv is Windows-layout. No live app or demo run was performed. The standalone locale checker uses a Windows-only path.
+- For the next localization task, inspect Task 4 in `PROJECT_ROADMAP.md`, then `app.py`, `analysis_wrapper.py`, `cs2_report/localization.py`, and `tests/test_app_report_view.py`. Use the verified native Windows Python interpreter with the app dependencies for AppTest and real-demo verification.
+
 ## Current Activity
 - **Last Verified Activity**: Completed localization Task 2 inventory across the Streamlit UI, progress/errors, both report versions, diagnosis, charts, hit-map captions, and coaching narratives.
 - **Current Task**: Localization Task 3 - add catalogs and translation helper.
