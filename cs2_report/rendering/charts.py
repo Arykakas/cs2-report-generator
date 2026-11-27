@@ -2,8 +2,15 @@
 
 import plotly.graph_objects as go
 
+from ..localization import translate
 
-def render_velocity_chart(velocity_75_100: int, velocity_100_150: int, velocity_over_150: int) -> str:
+
+def render_velocity_chart(
+    velocity_75_100: int,
+    velocity_100_150: int,
+    velocity_over_150: int,
+    locale: str = "en",
+) -> str:
     """Create the moving rifle shot velocity distribution chart."""
     chart = go.Figure(
         data=[
@@ -13,14 +20,14 @@ def render_velocity_chart(velocity_75_100: int, velocity_100_150: int, velocity_
                 marker_color=["#60a5fa", "#818cf8", "#fb7185"],
                 text=[velocity_75_100, velocity_100_150, velocity_over_150],
                 textposition="outside",
-                hovertemplate="Velocity %{x}<br>Shots: %{y}<extra></extra>",
+                hovertemplate=translate(locale, "chart.velocity_hover"),
             )
         ]
     )
     chart.update_layout(
-        title="Moving rifle shots by velocity",
-        xaxis_title="Velocity (units per second)",
-        yaxis_title="Shot count",
+        title=translate(locale, "chart.velocity_title"),
+        xaxis_title=translate(locale, "chart.velocity_axis"),
+        yaxis_title=translate(locale, "chart.shot_count"),
         yaxis=dict(rangemode="tozero", dtick=1),
         plot_bgcolor="white",
         paper_bgcolor="white",

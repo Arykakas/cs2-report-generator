@@ -24,6 +24,7 @@
     - Module 2: Performance snapshot & Qualitative Feedback
     - Module 3: Coaching lab (Skill Pillars)
     - Module 4: Training roadmap
+    - Localization: English, Danish, and Russian are selectable in the app and available in both reports. Tasks 1-7 and Task 8 technical checks and documentation are complete. Independent fluent-speaker review remains open.
 
 ## Design Decisions & Implementation Status
 - **Side-Aware Comparison**: Decision to prefer side-aware comparisons for CT/T halves when sample sizes are sufficient is complete. Pooled match data is the documented fallback for insufficient samples. Implementation verification of this logic is pending.

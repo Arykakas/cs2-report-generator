@@ -1,5 +1,7 @@
 """Deterministic player archetype scores and narrative templates."""
 
+from ..localization import translate, translate_archetype
+
 PERFORMANCE_BANDS = {
     "kd": (1.0, 1.5),
     "adr": (60.0, 80.0),
@@ -287,20 +289,46 @@ def normalize_narrative_stats(player_stats: dict) -> dict:
     }
 
 
-def generate_narrative(archetype: str, scores: dict, player_stats: dict) -> str:
+_NARRATIVE_KEYS = {
+    "The High-Octane Rusher": "rusher",
+    "The Patient Marksman": "patient",
+    "The Aggressive Marksman": "aggressive_marksman",
+    "The Tactical Anchor": "tactical_anchor",
+    "The Disciplined Anchor": "disciplined_anchor",
+    "The Versatile All-Rounder": "all_rounder",
+}
+
+
+def generate_narrative(
+    archetype: str,
+    scores: dict,
+    player_stats: dict,
+    locale: str = "en",
+) -> str:
     """Assembles the narrative components into a cohesive coaching summary with performance-aware feedback."""
     if archetype == "Insufficient Data":
-        return "The playstyle cannot be stated confidently because this player has insufficient rounds or shots. Collect more match data before assigning an archetype."
+        return translate(locale, "narrative.insufficient")
 
     normalized = normalize_narrative_stats(player_stats)
+    display_archetype = translate_archetype(locale, archetype)
     if not normalized["available"]:
-        missing = ", ".join(normalized["missing"])
-        return f"Playstyle: {archetype}. Performance context is unavailable because required stats are missing: {missing}."
+        missing_labels = {
+            "kills": translate(locale, "stat.kills"),
+            "deaths": translate(locale, "stat.deaths"),
+            "adr": translate(locale, "stat.adr"),
+        }
+        missing = ", ".join(missing_labels.get(key, key) for key in normalized["missing"])
+        return translate(
+            locale,
+            "narrative.missing_stats",
+            archetype=display_archetype,
+            missing=missing,
+        )
 
-    library = NARRATIVE_LIBRARY.get(archetype, NARRATIVE_LIBRARY["The Versatile All-Rounder"])
-    praise = library["praise"][0]
-    pivot = library["pivot"][0]
-    goal = library["goal"][0]
+    narrative_key = _NARRATIVE_KEYS.get(archetype, "all_rounder")
+    praise = translate(locale, f"narrative.{narrative_key}.praise")
+    pivot = translate(locale, f"narrative.{narrative_key}.pivot")
+    goal = translate(locale, f"narrative.{narrative_key}.goal")
 
     kd_ratio = normalized["kd_ratio"]
     adr = normalized["adr"]
@@ -308,22 +336,42 @@ def generate_narrative(archetype: str, scores: dict, player_stats: dict) -> str:
     adr_band = normalized["adr_band"]
 
     if kd_band == "low" or adr_band == "low":
-        performance = (
-            f"Low impact needs direct correction: K/D is {kd_ratio:.2f} and ADR is {adr:.1f}. "
+        performance = translate(
+            locale,
+            "narrative.impact.low",
+            kd=kd_ratio,
+            adr=adr,
         )
-        goal = f"Correct that result first: {goal}"
+        goal = translate(locale, "narrative.goal.correct_result", goal=goal)
     elif kd_band == "high" and adr_band == "high":
-        performance = (
-            f"This playstyle delivered strong impact: K/D is {kd_ratio:.2f} and ADR is {adr:.1f}. "
+        performance = translate(
+            locale,
+            "narrative.impact.high",
+            kd=kd_ratio,
+            adr=adr,
         )
     else:
-        performance = (
-            f"This playstyle produced steady impact: K/D is {kd_ratio:.2f} and ADR is {adr:.1f}. "
+        performance = translate(
+            locale,
+            "narrative.impact.steady",
+            kd=kd_ratio,
+            adr=adr,
         )
 
-    return f"Playstyle: {archetype}. {praise} {performance}{pivot} {goal}"
+    return " ".join((
+        translate(locale, "narrative.playstyle_prefix", archetype=display_archetype),
+        praise,
+        performance,
+        pivot,
+        goal,
+    ))
 
-def build_archetype_result(relative_scores: dict, player_stats: dict) -> dict:
+
+def build_archetype_result(
+    relative_scores: dict,
+    player_stats: dict,
+    locale: str = "en",
+) -> dict:
     """Build the canonical Report 2.0 archetype and narrative result."""
     archetype_selection = select_archetype(relative_scores)
     archetype = archetype_selection["archetype"]
@@ -361,16 +409,39 @@ def build_archetype_result(relative_scores: dict, player_stats: dict) -> dict:
         primary_trait_key is not None
         and relative_scores.get(primary_trait_key, 0) >= 95
     )
+    trait_label_keys = {
+        "Aggression": "primary.aggression",
+        "Precision": "primary.precision",
+        "Utility": "primary.utility",
+        "Positioning": "primary.positioning",
+        "Aggression + Precision": "primary.aggression_precision",
+        "Balance": "primary.balance",
+        "Insufficient Data": "primary.insufficient_data",
+    }
+    opportunity_keys = {
+        "Trigger Discipline": "opportunity.trigger_discipline",
+        "Positioning Variety": "opportunity.positioning_variety",
+        "Aggression Timing": "opportunity.aggression_timing",
+        "Space Taking": "opportunity.space_taking",
+        "Round Impact": "opportunity.round_impact",
+        "Collect more rounds and shots": "opportunity.insufficient",
+        "Specialization": "opportunity.specialization",
+    }
+    localized_traits = [
+        translate(locale, trait_label_keys.get(trait, trait))
+        for trait in archetype_selection["primary_traits"]
+    ]
 
     return {
-        "archetype": archetype,
-        "primary_traits": archetype_selection["primary_traits"],
-        "tied_distinctions": archetype_selection["tied_distinctions"],
+        "archetype": translate_archetype(locale, archetype),
+        "archetype_key": archetype,
+        "primary_traits": localized_traits,
+        "tied_distinctions": localized_traits,
         "scores": relative_scores,
-        "primary_trait": primary_trait,
+        "primary_trait": translate(locale, trait_label_keys.get(primary_trait, primary_trait)),
         "is_primary": is_primary,
-        "summary": generate_narrative(archetype, relative_scores, player_stats),
-        "opportunity": opportunity,
+        "summary": generate_narrative(archetype, relative_scores, player_stats, locale),
+        "opportunity": translate(locale, opportunity_keys.get(opportunity, opportunity)),
     }
 
 
